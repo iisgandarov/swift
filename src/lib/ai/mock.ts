@@ -1,5 +1,5 @@
 import { addDays, startOfWeek, weekdayIndex } from "@/lib/dates";
-import type { AiProvider, ParseContext, ParseResult, ParsedItem } from "./schema";
+import type { AiProvider, AudioInput, ParseContext, ParseResult, ParsedItem } from "./schema";
 
 /**
  * Offline stand-in for the real model, used in demo mode and when no API key is set.
@@ -152,6 +152,12 @@ export class MockProvider implements AiProvider {
     const language = lang ?? "az";
     return { text: SAMPLES[language], language };
   }
+  async parseAudio(_audio: AudioInput, ctx: ParseContext, opts: { lang?: "az" | "en" } = {}) {
+    await new Promise((r) => setTimeout(r, 600));
+    const transcript = SAMPLES[opts.lang ?? "az"];
+    return JSON.stringify({ transcript, ...mockParse(transcript, ctx) });
+  }
+
   async parseItems(text: string, ctx: ParseContext) {
     await new Promise((r) => setTimeout(r, 300));
     return JSON.stringify(mockParse(text, ctx));

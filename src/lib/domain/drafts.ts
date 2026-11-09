@@ -110,3 +110,47 @@ export function draftToInput(
 export function draftIsValid(d: Draft) {
   return d.title.trim().length > 0 && (d.type === "task" || Boolean(d.date && d.start));
 }
+
+/** Fields the user set by hand in the form; they always win over what the AI suggested. */
+export interface ManualChoices {
+  touched: ReadonlySet<"date" | "time" | "type" | "category" | "priority" | "notes">;
+  date: string | null;
+  start: string | null;
+  end: string | null;
+  type: ItemType;
+  categoryId: string | null;
+  priority: Priority;
+  notes: string;
+}
+
+export function applyManualChoices(d: Draft, m: ManualChoices): Draft {
+  const out: Draft = { ...d, uncertain: [...d.uncertain] };
+  const resolve = (...f: UncertainField[]) => (out.uncertain = out.uncertain.filter((u) => !f.includes(u)));
+  if (m.touched.has("date")) {
+    out.date = m.date;
+    resolve("date");
+  }
+  if (m.touched.has("time")) {
+    if (m.start) {
+      Object.assign(out, { type: "event", start: m.start, end: m.end, date: out.date ?? m.date });
+    } else {
+      Object.assign(out, { type: "task", start: null, end: null });
+    }
+    resolve("time", "type");
+  } else if (m.touched.has("type")) {
+    // switching to Event only works with a time; keep the AI's time if it found one
+    if (m.type === "task") Object.assign(out, { type: "task", start: null, end: null });
+    else if (out.start) out.type = "event";
+    resolve("type");
+  }
+  if (m.touched.has("category")) {
+    out.categoryId = m.categoryId;
+    resolve("category");
+  }
+  if (m.touched.has("priority")) {
+    out.priority = m.priority;
+    resolve("priority");
+  }
+  if (m.touched.has("notes") && m.notes.trim()) out.notes = m.notes;
+  return out;
+}

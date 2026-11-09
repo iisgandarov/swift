@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { ParseResult } from "@/lib/ai/schema";
 import { draftsFromResult, type Draft } from "@/lib/domain/drafts";
+import { toWav16k } from "@/lib/client/wav";
 import { api, ApiError } from "@/lib/client/api";
 import { useCategories } from "@/lib/client/queries";
 import { useAppSettings } from "@/hooks/use-app-settings";
@@ -39,16 +40,18 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
   const [result, setResult] = useState<VoiceResult | null>(null);
 
   const handle = useCallback(
-    (res: ParseResponse, source: "voice" | "text") => {
-      const drafts = draftsFromResult(res, { categories, defaultEventMinutes, today });
+    (res: ParseResponse, source: "voice" | "text", transform?: (d: Draft) => Draft): boolean => {
+      let drafts = draftsFromResult(res, { categories, defaultEventMinutes, today });
+      if (transform) drafts = drafts.map(transform);
       if (drafts.length === 0) {
         setState("idle");
         if (res.transcript) onFallbackText(res.transcript);
         toast({ message: res.clarification ?? t("nothingHeard"), duration: 5000 });
-        return;
+        return false;
       }
       setResult({ drafts, transcript: res.transcript, language: res.detected_language, source });
       setState("review");
+      return true;
     },
     [categories, defaultEventMinutes, today, onFallbackText, toast, t],
   );
@@ -59,7 +62,16 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
       if (transcript) onFallbackText(transcript);
       const code = err instanceof ApiError ? err.code : "";
       toast({
-        message: code === "rate_limited" ? t("rateLimited") : code === "network" ? t("offline") : t("error"),
+        message:
+          code === "rate_limited"
+            ? t("rateLimited")
+            : code === "ai_quota"
+              ? t("quota")
+              : code === "ai_not_configured"
+                ? t("notConfigured")
+                : code === "network"
+                  ? t("offline")
+                  : t("error"),
         tone: "error",
         duration: 6000,
       });
@@ -75,8 +87,14 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
       }
       setState("processing");
       const form = new FormData();
-      const ext = r.mimeType.includes("mp4") || r.mimeType.includes("aac") ? "m4a" : r.mimeType.includes("ogg") ? "ogg" : "webm";
-      form.append("audio", new File([r.blob], `voice.${ext}`, { type: r.mimeType.split(";")[0] }));
+      // 16 kHz mono WAV: small, and accepted by every speech model; fall back to the raw recording
+      const wav = await toWav16k(r.blob);
+      if (wav) {
+        form.append("audio", new File([wav], "voice.wav", { type: "audio/wav" }));
+      } else {
+        const ext = r.mimeType.includes("mp4") || r.mimeType.includes("aac") ? "m4a" : r.mimeType.includes("ogg") ? "ogg" : "webm";
+        form.append("audio", new File([r.blob], `voice.${ext}`, { type: r.mimeType.split(";")[0] }));
+      }
       form.append("lang", lang);
       form.append("duration", String(Math.round(r.durationMs)));
       try {
@@ -103,17 +121,19 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
     recorder.start();
   }, [online, recorder, toast, t]);
 
+  /** Resolves true when the confirmation sheet opened; `transform` applies the user's manual choices. */
   const parseText = useCallback(
-    async (text: string) => {
+    async (text: string, transform?: (d: Draft) => Draft): Promise<boolean> => {
       if (!online) {
         toast({ message: t("offline"), tone: "error" });
-        return;
+        return false;
       }
       setState("processing");
       try {
-        handle(await api<ParseResponse>("/api/parse", { method: "POST", json: { text } }), "text");
+        return handle(await api<ParseResponse>("/api/parse", { method: "POST", json: { text } }), "text", transform);
       } catch (err) {
         fail(err, text);
+        return false;
       }
     },
     [online, handle, fail, toast, t],

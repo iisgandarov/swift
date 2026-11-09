@@ -3,20 +3,21 @@ import { withAuth, json, HttpError } from "@/lib/server/api";
 import { enforceAiRateLimit } from "@/lib/server/rate-limit";
 import { getAiProvider } from "@/lib/ai";
 import { buildParseContext } from "@/lib/ai/context";
-import { AiParseError, parseWithRetry } from "@/lib/ai/parse";
+import { AiParseError, parseAudioWithRetry } from "@/lib/ai/parse";
+import { AiProviderError } from "@/lib/ai/schema";
 
 export const maxDuration = 60;
 
-const MAX_BYTES = 8 * 1024 * 1024; // ~60 s of compressed audio is far below this
+const MAX_BYTES = 4 * 1024 * 1024; // 60 s of 16 kHz mono WAV ≈ 1.9 MB
 const MAX_SECONDS = 65;
-const ALLOWED = /^audio\/(webm|mp4|m4a|x-m4a|aac|mpeg|mp3|ogg|wav|x-wav)/;
+const ALLOWED = /^audio\/(wav|x-wav|wave|webm|mp4|m4a|x-m4a|aac|mpeg|mp3|ogg|flac)/;
 
 const metaSchema = z.object({
   lang: z.enum(["auto", "az", "en"]).default("auto"),
   duration: z.coerce.number().min(0).max(MAX_SECONDS * 1000),
 });
 
-/** Audio → transcript → items. Returns { transcript, detected_language, items, clarification }. */
+/** Audio → { transcript, detected_language, items, clarification } in ONE model call (retried once). */
 export const POST = withAuth(async (ctx, req) => {
   let form: FormData;
   try {
@@ -28,27 +29,23 @@ export const POST = withAuth(async (ctx, req) => {
   if (!(audio instanceof File)) throw new HttpError(400, "missing_audio");
   if (audio.size === 0) throw new HttpError(400, "empty_audio");
   if (audio.size > MAX_BYTES) throw new HttpError(413, "audio_too_large");
-  const type = audio.type.split(";")[0];
-  if (!ALLOWED.test(type)) throw new HttpError(415, "unsupported_audio");
+  const mimeType = audio.type.split(";")[0] || "audio/wav";
+  if (!ALLOWED.test(mimeType)) throw new HttpError(415, "unsupported_audio");
   const meta = metaSchema.parse({ lang: form.get("lang") ?? undefined, duration: form.get("duration") ?? 0 });
 
   await enforceAiRateLimit(ctx.repo, "voice");
-  const provider = getAiProvider();
-  const lang = meta.lang === "auto" ? undefined : meta.lang;
-
-  // give the file a name with an extension the STT API recognises
-  const ext = type.includes("mp4") || type.includes("m4a") || type.includes("aac") ? "m4a" : type.split("/")[1].replace("x-", "");
-  const file = new File([await audio.arrayBuffer()], `voice.${ext}`, { type });
-
-  const { text, language } = await provider.transcribe(file, lang);
-  if (!text.trim()) return json({ transcript: "", detected_language: language ?? "az", items: [], clarification: null });
-
+  const base64 = Buffer.from(await audio.arrayBuffer()).toString("base64");
   try {
-    const result = await parseWithRetry(provider, text, await buildParseContext(ctx));
-    return json({ transcript: text, ...result, detected_language: language ?? result.detected_language });
+    const result = await parseAudioWithRetry(
+      getAiProvider(),
+      { base64, mimeType },
+      await buildParseContext(ctx),
+      meta.lang === "auto" ? undefined : meta.lang,
+    );
+    return json({ ...result, transcript: result.transcript ?? "" });
   } catch (err) {
-    // keep the transcript so the user can fix it as text
-    if (err instanceof AiParseError) return json({ error: "ai_parse_failed", transcript: text }, 502);
+    if (err instanceof AiParseError) return json({ error: err.code }, err.code === "ai_quota" ? 429 : 502);
+    if (err instanceof AiProviderError) return json({ error: "ai_not_configured" }, 503);
     throw err;
   }
 });

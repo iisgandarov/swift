@@ -24,6 +24,8 @@ export const parsedItemSchema = z.object({
 export type ParsedItem = z.infer<typeof parsedItemSchema>;
 
 export const parseResultSchema = z.object({
+  /** only for audio input: what was said, verbatim */
+  transcript: z.string().nullish(),
   detected_language: z.enum(["az", "en"]),
   items: z.array(parsedItemSchema).max(20),
   clarification: z.string().nullable(),
@@ -67,6 +69,16 @@ export const parseResultJsonSchema = {
   },
 } as const;
 
+/** Same schema plus a required `transcript` field, for audio input. */
+export const parseAudioJsonSchema = {
+  ...parseResultJsonSchema,
+  required: ["transcript", ...parseResultJsonSchema.required],
+  properties: {
+    transcript: { type: "string", description: "Everything the user said, verbatim, in the spoken language." },
+    ...parseResultJsonSchema.properties,
+  },
+} as const;
+
 export interface ParseContext {
   /** ISO timestamp of "now" */
   now: string;
@@ -80,9 +92,26 @@ export interface ParseContext {
   defaultEventMinutes: number;
 }
 
+export interface AudioInput {
+  /** base64 of the audio bytes */
+  base64: string;
+  mimeType: string;
+}
+
+/** Normalised provider failure, so the retry logic and the UI can react per cause. */
+export class AiProviderError extends Error {
+  constructor(
+    public code: "quota" | "network" | "upstream" | "config" | "blocked",
+    message?: string,
+  ) {
+    super(message ?? code);
+  }
+}
+
 export interface AiProvider {
   readonly name: string;
-  transcribe(audio: File, lang?: "az" | "en"): Promise<{ text: string; language: "az" | "en" | null }>;
-  /** Returns the raw JSON string the model produced (validated by the caller). */
+  /** Text → raw JSON string matching parseResultSchema (validated by the caller). */
   parseItems(text: string, ctx: ParseContext, opts?: { retryHint?: string }): Promise<string>;
+  /** Audio → raw JSON string matching parseResultSchema including `transcript`, in ONE call. */
+  parseAudio(audio: AudioInput, ctx: ParseContext, opts?: { lang?: "az" | "en"; retryHint?: string }): Promise<string>;
 }

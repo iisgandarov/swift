@@ -2,7 +2,7 @@ import "server-only";
 import OpenAI from "openai";
 import { env } from "@/lib/server/env";
 import { buildSystemPrompt } from "./prompt";
-import { parseResultJsonSchema, type AiProvider, type ParseContext } from "./schema";
+import { parseResultJsonSchema, type AiProvider, type AudioInput, type ParseContext } from "./schema";
 
 export class OpenAiProvider implements AiProvider {
   readonly name = "openai";
@@ -24,6 +24,16 @@ export class OpenAiProvider implements AiProvider {
     });
     const text = res.text.trim();
     return { text, language: lang ?? null };
+  }
+
+  /** Optional provider: OpenAI needs two calls (speech-to-text, then parsing). */
+  async parseAudio(audio: AudioInput, ctx: ParseContext, opts: { lang?: "az" | "en"; retryHint?: string } = {}) {
+    const ext = audio.mimeType.includes("wav") ? "wav" : audio.mimeType.includes("mp4") ? "m4a" : "webm";
+    const file = new File([Buffer.from(audio.base64, "base64")], `voice.${ext}`, { type: audio.mimeType });
+    const { text } = await this.transcribe(file, opts.lang);
+    if (!text) return JSON.stringify({ transcript: "", detected_language: opts.lang ?? "az", items: [], clarification: null });
+    const parsed = JSON.parse(await this.parseItems(text, ctx, opts)) as Record<string, unknown>;
+    return JSON.stringify({ ...parsed, transcript: text });
   }
 
   async parseItems(text: string, ctx: ParseContext, opts: { retryHint?: string } = {}) {

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("create a task by text and complete it", async ({ page }, info) => {
-  const title = `Smoke ${info.project.name} ${Date.now()}`;
+  const title = `Smoke ${info.project.name} ${Math.random().toString(36).replace(/[^a-z]/g, "").slice(0, 6)}`;
 
   await page.goto("/");
   await expect(page.getByRole("tablist")).toBeVisible();
@@ -16,12 +16,18 @@ test("create a task by text and complete it", async ({ page }, info) => {
   await expect(page).toHaveURL(/\/new\/text/);
   await page.locator("#title").fill(title);
   await page.getByTestId("create-item").click();
+  // Create sends the text to the AI first (demo: offline mock) and opens the confirmation sheet
+  await page.getByTestId("create-all").click();
 
   await expect(page).toHaveURL(/\/$/);
   const row = page.locator(`[data-testid="item-row"][data-title="${title}"]`);
   await expect(row).toBeVisible();
 
-  await row.getByRole("checkbox").click();
+  // wait for the save itself (the checkmark is optimistic), so the reload below can't cancel it
+  await Promise.all([
+    page.waitForResponse((r) => r.url().includes("/api/items/") && r.request().method() === "PATCH" && r.ok()),
+    row.getByRole("checkbox").click(),
+  ]);
   await expect(row.getByRole("checkbox")).toHaveAttribute("aria-checked", "true");
 
   // survives a reload (server state, not just the optimistic cache)

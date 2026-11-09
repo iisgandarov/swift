@@ -28,7 +28,13 @@ export function Providers({ children }: { children: ReactNode }) {
     }),
   );
   return (
-    <PersistQueryClientProvider client={client} persistOptions={{ persister, buster: CACHE_BUSTER, maxAge: 1000 * 60 * 60 * 24 * 7 }}>
+    <PersistQueryClientProvider
+      client={client}
+      persistOptions={{ persister, buster: CACHE_BUSTER, maxAge: 1000 * 60 * 60 * 24 * 7 }}
+      // show the saved cache instantly, then refresh everything in the background
+      // (the saved copy can be up to a second older than the last change)
+      onSuccess={() => client.invalidateQueries()}
+    >
       <ToastProvider>{children}</ToastProvider>
     </PersistQueryClientProvider>
   );

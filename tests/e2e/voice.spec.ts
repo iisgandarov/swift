@@ -29,12 +29,23 @@ test("long-press on + goes straight to voice", async ({ page }) => {
   await expect(page).toHaveURL(/\/new\/voice/);
 });
 
-test("typed sentence is understood", async ({ page }) => {
+test("typed sentence is understood when tapping Create", async ({ page }) => {
   await page.goto("/new/text");
   await page.locator("#title").fill("sabah axşam 7-də ailə ilə şam yeməyi");
-  await page.getByTestId("parse-text").click();
+  await page.getByTestId("create-item").click();
   const card = page.getByTestId("draft-card");
   await expect(card).toHaveCount(1, { timeout: 10_000 });
   await expect(card.getByRole("radio", { name: /Tədbir|Event/ })).toHaveAttribute("aria-checked", "true");
   await expect(card.getByText("19:00 – 20:00")).toBeVisible();
+});
+
+test("manual form choices win over the AI", async ({ page }) => {
+  await page.goto("/new/text");
+  await page.locator("#title").fill("sabah saat 10-da Ramizlə görüş");
+  await page.getByRole("button", { name: /Prioritet|Priority/ }).click();
+  await page.getByRole("option", { name: /Yüksək|High/ }).click();
+  await page.getByTestId("create-item").click();
+  const card = page.getByTestId("draft-card");
+  await expect(card).toHaveCount(1, { timeout: 10_000 });
+  await expect(card.getByText(/Yüksək|High/)).toBeVisible();
 });

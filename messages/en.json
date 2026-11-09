@@ -54,7 +54,9 @@
     "voiceHint": "Speak — Swift fills in the date, time and category",
     "textHint": "Type it or fill in the form",
     "tapToSpeak": "Tap to speak",
-    "editAsText": "Edit as text"
+    "editAsText": "Edit as text",
+    "saveAsTyped": "Couldn't understand that. Your text is kept — tap Create Task again to save it as typed.",
+    "understanding": "Understanding..."
   },
   "field": {
     "date": "Date",
@@ -101,7 +103,9 @@
     "recordAgain": "Record again",
     "remove": "Remove",
     "transcript": "You said",
-    "created": "{count, plural, one {# item created} other {# items created}}"
+    "created": "{count, plural, one {# item created} other {# items created}}",
+    "quota": "The AI limit is reached for now. Try again in a bit — your text is kept.",
+    "notConfigured": "Voice and text understanding isn't set up yet (GEMINI_API_KEY). You can still add the task with the form."
   },
   "action": {
     "create": "Create Task",

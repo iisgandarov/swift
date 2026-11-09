@@ -45,11 +45,12 @@ Browser (React, React Query persisted to IndexedDB, service worker for the offli
 Next.js route handlers ── zod validation ── task/event rules ── Repo interface
    │                                                    ├─ SupabaseRepo (Postgres + RLS)
    │                                                    └─ DemoRepo (in memory)
-   ├─ /api/voice, /api/parse → AiProvider (OpenAI or offline mock) → zod-checked JSON
+   ├─ /api/voice, /api/parse → AiProvider (Gemini by default; OpenAI optional; offline mock in demo) → zod-checked JSON
    └─ Google Calendar client (encrypted refresh token, server-side only)
 ```
 
 - **`src/lib/domain/rules.ts`**: the task/event rules. A clock time makes it an event; events without an end get the default duration; a type flip creates or deletes the Google event; completing an item is app-only.
+- **`src/lib/ai/gemini.ts`**: Google Gemini provider (default). Voice notes go in as audio, so one call returns the transcript and the parsed items.
 - **`src/lib/ai/prompt.ts`**: the parsing system prompt: Azerbaijani dates and times, multi-item utterances, and the "next Friday" convention, plus the few-shot examples.
 - **`src/lib/server/sync.ts`**: pushes changes to Google Calendar and never throws. On failure the item keeps its data with `sync_status = failed` and a Retry badge.
 - **`src/lib/dates`**: Asia/Baku-aware helpers, Monday-first weeks, Azerbaijani weekday/month labels.

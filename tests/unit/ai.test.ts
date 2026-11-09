@@ -56,8 +56,8 @@ function fakeProvider(responses: string[]): AiProvider & { calls: number } {
   return {
     name: "fake",
     calls: 0,
-    async transcribe() {
-      return { text: "", language: null };
+    async parseAudio() {
+      return responses[this.calls++] ?? "";
     },
     async parseItems() {
       return responses[this.calls++] ?? "";

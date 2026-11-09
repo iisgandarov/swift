@@ -8,7 +8,7 @@ You will create four free (or nearly free) accounts. Each one gives you some val
 |---|---|---|
 | **Supabase** | Database and Google sign-in | Free plan is enough |
 | **Google Cloud** | Lets Swift add events to your Google Calendar | Free |
-| **OpenAI** | Understands your voice and turns it into tasks | Pay as you go, a few cents a day |
+| **Google AI Studio (Gemini)** | Understands voice tasks and text tasks | Free tier |
 | **Vercel** | Hosts the app on the internet | Free plan is enough |
 
 You also need the Swift code in a **GitHub** repository. Vercel deploys from there.
@@ -26,10 +26,9 @@ SUPABASE_SERVICE_ROLE_KEY=
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=
-OPENAI_API_KEY=
-AI_PROVIDER=openai
-STT_MODEL=
-PARSE_MODEL=
+AI_PROVIDER=gemini
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-3.8-flash
 TOKEN_ENCRYPTION_KEY=
 ALLOWED_EMAILS=isgandarov.israfil@gmail.com
 APP_URL=
@@ -151,17 +150,16 @@ The first time you connect your calendar, Google shows **"Google hasn't verified
 
 ---
 
-## Step 3: OpenAI (voice understanding)
+## Step 3: Google Gemini (voice and text understanding)
 
-1. Go to <https://platform.openai.com> and sign up or sign in.
-2. **Set a spending limit first**: open **Settings** → **Billing**. Add a payment method and a small prepaid amount (for example $5). Then open **Limits** and set a monthly budget, for example **$5**. Swift also limits itself to 30 voice requests per hour.
-3. Open **API keys** → **Create new secret key** → name it `Swift` → copy it to `OPENAI_API_KEY`. You can only see it once.
-4. Choose the two models. Model names change over time, so check <https://platform.openai.com/docs/models>:
-   - `STT_MODEL`: the current **speech-to-text / transcription** model. At the time of writing, `gpt-4o-transcribe` (higher quality) or `gpt-4o-mini-transcribe` (cheaper). These handle Azerbaijani well.
-   - `PARSE_MODEL`: a small, cheap current text model that supports **Structured Outputs**. At the time of writing, `gpt-4.1-mini`, or a newer "mini" model.
-5. Leave `AI_PROVIDER=openai`.
+Swift sends your voice note or typed sentence to Google Gemini, which writes it down and fills in the title, date, time, category and priority. One request does both.
 
----
+1. Go to <https://aistudio.google.com/apikey> and sign in with your Gmail.
+2. Click **Create API key**. Choose your Google Cloud project if it asks (the same "Swift" / "My First Project" is fine).
+3. Copy the key (it starts with `AIza`) into your note as `GEMINI_API_KEY`.
+4. Leave `AI_PROVIDER=gemini` and `GEMINI_MODEL=gemini-3.8-flash`. If Google renames its Flash models later, put the current Flash model name from <https://ai.google.dev/gemini-api/docs/models> here.
+
+The free tier is enough for personal use. If you ever hit its limit, Swift says so and keeps your text, and you can save it as typed.
 
 ## Step 4: Deploy on Vercel
 
@@ -225,8 +223,9 @@ If something fails, see **Troubleshooting** below.
 | Settings says **Google OAuth isn't configured** | One of `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `TOKEN_ENCRYPTION_KEY` is missing in Vercel. |
 | Events show a red **Retry** badge | Swift saved the item, but Google refused it. Tap **Retry**. If it keeps failing, reconnect Google Calendar in Settings. |
 | Calendar sync stopped after about a week | The consent screen is still in **Testing**. Do Step 2.7, then reconnect in Settings. |
-| Voice says "Something went wrong while understanding" | Check `OPENAI_API_KEY`, your OpenAI balance, and that `STT_MODEL` / `PARSE_MODEL` are current model names. Your words are kept in the text box so nothing is lost. |
-| "Too many voice requests this hour" | The built-in limit of 30 voice requests per hour protects your OpenAI credits. Wait a bit. |
+| "Voice and text understanding isn't set up yet" | `GEMINI_API_KEY` is missing or wrong in Vercel, or `GEMINI_MODEL` is not a current model name. Redeploy after fixing. |
+| "The AI limit is reached for now" | Gemini's free-tier limit. Wait a minute; your text is kept and can be saved as typed. |
+| "Too many voice requests this hour" | Swift's own limit of 30 AI requests per hour. Wait a bit. |
 | iPhone: microphone blocked | iPhone **Settings → Safari → Microphone → Allow**. For the installed app, also check **Settings → Swift** if it appears there. |
 
 ---

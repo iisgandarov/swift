@@ -34,6 +34,9 @@ export interface FormState {
 
 type Picker = "date" | "time" | "category" | "priority" | "notes" | null;
 
+/** Form fields the user changed by hand (these win over anything the AI suggests). */
+export type TouchedField = "date" | "time" | "type" | "category" | "priority" | "notes";
+
 export function emptyForm(): FormState {
   return { title: "", notes: "", date: null, start: null, end: null, type: "task", priority: "medium", categoryId: null };
 }
@@ -60,6 +63,8 @@ export function ItemForm({
   titleSlot,
   onTitleChange,
   heading,
+  onBeforeSubmit,
+  pending,
 }: {
   item?: Item;
   initial: FormState;
@@ -70,6 +75,10 @@ export function ItemForm({
   onTitleChange?: (title: string) => void;
   /** screen title for a new item (default "New Task") */
   heading?: string;
+  /** Runs before saving a NEW item; resolve true when it took over (e.g. opened the AI confirmation). */
+  onBeforeSubmit?: (form: FormState, touched: Set<TouchedField>) => Promise<boolean>;
+  /** external work in progress (e.g. the AI is reading the text) */
+  pending?: boolean;
 }) {
   const t = useTranslations();
   const toast = useToast();
@@ -82,12 +91,15 @@ export function ItemForm({
   const [notesDraft, setNotesDraft] = useState(initial.notes);
   const [error, setError] = useState<string | null>(null);
   const setForm = (f: Partial<FormState>) => setFormState((s) => ({ ...s, ...f }));
+  const [touched, setTouched] = useState<Set<TouchedField>>(() => new Set());
+  const touch = (...k: TouchedField[]) => setTouched((s) => new Set([...s, ...k]));
 
   const category = categories.find((c) => c.id === form.categoryId);
-  const busy = create.isPending || update.isPending;
+  const busy = create.isPending || update.isPending || Boolean(pending);
   const canSave = form.title.trim().length > 0 && (form.type === "task" || (form.date && form.start));
 
   function setType(type: ItemType) {
+    touch("type");
     if (type === "event" && !form.start) {
       setForm({ type, date: form.date ?? today });
       setPicker("time");
@@ -102,6 +114,7 @@ export function ItemForm({
 
   async function submit() {
     if (!canSave || busy) return;
+    if (!item && onBeforeSubmit && (await onBeforeSubmit(form, touched))) return;
     setError(null);
     const input: ItemInput = {
       type: form.type,
@@ -223,7 +236,7 @@ export function ItemForm({
           </p>
         )}
         <Button type="submit" size="lg" className="w-full" disabled={!canSave || busy} data-testid="create-item">
-          {item ? t("action.save") : t("action.create")}
+          {pending ? t("newTask.understanding") : item ? t("action.save") : t("action.create")}
         </Button>
       </div>
 
@@ -234,7 +247,10 @@ export function ItemForm({
         today={today}
         locale={locale}
         allowNone={form.type === "task"}
-        onChange={(date) => setForm({ date })}
+        onChange={(date) => {
+          touch("date");
+          setForm({ date });
+        }}
       />
       <TimePickerSheet
         open={picker === "time"}
@@ -245,20 +261,24 @@ export function ItemForm({
         }}
         value={{ start: form.start, end: form.end }}
         defaultMinutes={defaultEventMinutes}
-        onChange={({ start, end }) =>
+        onChange={({ start, end }) => {
+          touch("time", "type");
           setForm(
             start
               ? { start, end: end ?? addMinutesToTime(start, defaultEventMinutes).time, type: "event", date: form.date ?? today }
               : { start: null, end: null, type: "task" },
-          )
-        }
+          );
+        }}
       />
       <OptionSheet
         open={picker === "category"}
         onClose={() => setPicker(null)}
         title={t("field.category")}
         value={form.categoryId}
-        onChange={(categoryId) => setForm({ categoryId })}
+        onChange={(categoryId) => {
+          touch("category");
+          setForm({ categoryId });
+        }}
         options={[
           { value: null, label: t("field.none") },
           ...categories.map((c) => ({
@@ -273,7 +293,10 @@ export function ItemForm({
         onClose={() => setPicker(null)}
         title={t("field.priority")}
         value={form.priority}
-        onChange={(priority) => setForm({ priority })}
+        onChange={(priority) => {
+          touch("priority");
+          setForm({ priority });
+        }}
         options={(["high", "medium", "low"] as const).map((p) => ({
           value: p,
           label: t(`priority.${p}`),
@@ -288,6 +311,7 @@ export function ItemForm({
           <Button
             className="w-full"
             onClick={() => {
+              touch("notes");
               setForm({ notes: notesDraft });
               setPicker(null);
             }}

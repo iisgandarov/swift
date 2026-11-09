@@ -2,45 +2,50 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Loader2, Sparkles } from "lucide-react";
 import { useProfile } from "@/lib/client/queries";
 import { takeTextDraft } from "@/lib/client/draft";
+import { applyManualChoices } from "@/lib/domain/drafts";
+import { useToast } from "@/components/ui/toast";
 import { ResultReview } from "@/components/voice/result-review";
 import { useVoiceFlow } from "@/components/voice/use-voice-flow";
 import { emptyForm, ItemForm, type FormState } from "./item-form";
 import { FormFrame } from "./form-frame";
 
-/** Text task: type a sentence (or use the keyboard's dictation) and/or fill in the form. */
+/**
+ * Text task: type a sentence (or use the keyboard's dictation) and tap Create.
+ * Online, the text goes to the AI first and the confirmation sheet opens with the
+ * fields filled in; anything set by hand in the form wins. If the AI fails, the text
+ * stays and the next tap saves it as typed. Offline, it is saved as typed right away.
+ */
 export function TextTaskScreen() {
   const t = useTranslations();
+  const toast = useToast();
   const profile = useProfile();
   const [initial] = useState<FormState>(() => ({ ...emptyForm(), title: takeTextDraft() ?? "" }));
   const setFormRef = useRef<((f: Partial<FormState>) => void) | null>(null);
   const onFallbackText = useCallback((text: string) => setFormRef.current?.({ title: text }), []);
   const flow = useVoiceFlow({ lang: profile?.voice_locale ?? "auto", onFallbackText });
+  const [saveAsTypedFor, setSaveAsTypedFor] = useState<string | null>(null);
 
   return (
     <FormFrame>
       <ItemForm
         initial={initial}
         heading={t("newTask.textTitle")}
-        titleSlot={({ form, setForm }) => {
+        pending={flow.state === "processing"}
+        titleSlot={({ setForm }) => {
           setFormRef.current = setForm;
-          const words = form.title.trim().split(/\s+/).filter(Boolean).length;
-          if (words < 3) return null;
-          return (
-            <button
-              type="button"
-              onClick={() => flow.parseText(form.title.trim())}
-              disabled={flow.state === "processing"}
-              aria-label={t("newTask.understand")}
-              title={t("newTask.understand")}
-              data-testid="parse-text"
-              className="absolute top-3 right-3 flex size-10 items-center justify-center rounded-full bg-chip text-accent"
-            >
-              {flow.state === "processing" ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Sparkles className="size-5" aria-hidden />}
-            </button>
-          );
+          return null;
+        }}
+        onBeforeSubmit={async (form, touched) => {
+          const text = form.title.trim();
+          if (!flow.online || saveAsTypedFor === text) return false; // save as typed
+          const opened = await flow.parseText(text, (d) => applyManualChoices(d, { ...form, touched }));
+          if (!opened) {
+            setSaveAsTypedFor(text);
+            toast({ message: t("newTask.saveAsTyped"), duration: 6000 });
+          }
+          return true;
         }}
       />
       <ResultReview flow={flow} onAgain={flow.close} />

@@ -10,6 +10,8 @@ export const env = {
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
   googleRedirectUri: process.env.GOOGLE_REDIRECT_URI ?? "",
   openaiKey: process.env.OPENAI_API_KEY ?? "",
+  geminiKey: process.env.GEMINI_API_KEY ?? "",
+  geminiModel: process.env.GEMINI_MODEL ?? "",
   aiProvider: process.env.AI_PROVIDER ?? "",
   sttModel: process.env.STT_MODEL ?? "",
   parseModel: process.env.PARSE_MODEL ?? "",

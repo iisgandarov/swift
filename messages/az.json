@@ -54,7 +54,9 @@
     "voiceHint": "Danış — tarixi, vaxtı və kateqoriyanı Swift özü doldursun",
     "textHint": "Yaz və ya formu doldur",
     "tapToSpeak": "Danışmaq üçün toxun",
-    "editAsText": "Mətn kimi redaktə et"
+    "editAsText": "Mətn kimi redaktə et",
+    "saveAsTyped": "Anlamaq alınmadı. Mətnin saxlanıldı — yenidən «Tapşırıq yarat» bas, olduğu kimi yadda saxlanacaq.",
+    "understanding": "Anlayıram..."
   },
   "field": {
     "date": "Tarix",
@@ -101,7 +103,9 @@
     "recordAgain": "Yenidən danış",
     "remove": "Sil",
     "transcript": "Dediyin",
-    "created": "{count} element yaradıldı"
+    "created": "{count} element yaradıldı",
+    "quota": "AI limiti bu dəqiqə üçün doldu. Bir az sonra yenidən cəhd et — mətnin saxlanıldı.",
+    "notConfigured": "Səsli və mətnli anlama hələ qurulmayıb (GEMINI_API_KEY). Tapşırığı formla əlavə edə bilərsən."
   },
   "action": {
     "create": "Tapşırıq yarat",
