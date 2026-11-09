@@ -3,17 +3,41 @@
  * - Build assets (/_next/static), icons, fonts: cache-first (they are content-hashed / immutable).
  * - API and auth requests are never cached here; data is persisted client-side (IndexedDB).
  */
-const VERSION = "swift-v1";
+const VERSION = "swift-v2";
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const PRECACHE = ["/", "/calendar", "/focus", "/stats", "/settings", "/new", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon.svg"];
 
+/** Caches the JS/CSS a page needs, so routes open offline even if they were never visited. */
+async function cacheAssetsFromHtml(res) {
+  try {
+    const html = await res.text();
+    const urls = [...new Set(html.match(/\/_next\/static\/[^"'\s)\\]+\.(?:js|css)/g) || [])];
+    const cache = await caches.open(ASSET_CACHE);
+    await Promise.allSettled(
+      urls.map(async (u) => {
+        if (!(await cache.match(u))) await cache.add(u);
+      }),
+    );
+  } catch {
+    /* best effort */
+  }
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches
-      .open(SHELL_CACHE)
-      .then((cache) => Promise.allSettled(PRECACHE.map((url) => cache.add(new Request(url, { credentials: "include" })))))
-      .then(() => self.skipWaiting()),
+    (async () => {
+      const cache = await caches.open(SHELL_CACHE);
+      await Promise.allSettled(
+        PRECACHE.map(async (url) => {
+          const res = await fetch(new Request(url, { credentials: "include" }));
+          if (!res.ok || res.redirected) return;
+          await cache.put(url, res.clone());
+          if (res.headers.get("content-type")?.includes("text/html")) await cacheAssetsFromHtml(res);
+        }),
+      );
+      await self.skipWaiting();
+    })(),
   );
 });
 
@@ -50,6 +74,7 @@ self.addEventListener("fetch", (event) => {
           if (res.ok && !res.redirected) {
             const cache = await caches.open(SHELL_CACHE);
             cache.put(url.pathname, res.clone());
+            event.waitUntil(cacheAssetsFromHtml(res.clone()));
           }
           return res;
         } catch {

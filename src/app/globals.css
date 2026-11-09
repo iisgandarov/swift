@@ -20,7 +20,7 @@
   --border: rgba(15, 23, 42, 0.07);
   --divider: rgba(15, 23, 42, 0.06);
   --text: #0f172a;
-  --text-muted: #64748b;
+  --text-muted: #56657b;
   --text-subtle: #94a3b8;
   --chip: #e6f2ff;
   --chip-text: #0f172a;
@@ -32,7 +32,7 @@
   --focus-ring: rgba(0, 87, 255, 0.45);
 
   /* status */
-  --danger: #ef4444;
+  --danger: #c81e1e;
   --danger-soft: #fee2e2;
   --success: #16a34a;
   --warning: #f59e0b;
