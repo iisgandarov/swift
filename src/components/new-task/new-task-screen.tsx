@@ -94,7 +94,7 @@ export function NewTaskScreen({ startVoice }: { startVoice: boolean }) {
               aria-label={t("newTask.understand")}
               title={t("newTask.understand")}
               data-testid="parse-text"
-              className="absolute top-3 right-3 flex size-10 items-center justify-center rounded-full bg-chip text-primary dark:text-secondary"
+              className="absolute top-3 right-3 flex size-10 items-center justify-center rounded-full bg-chip text-accent"
             >
               {flow.state === "processing" ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Sparkles className="size-5" aria-hidden />}
             </button>

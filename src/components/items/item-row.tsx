@@ -140,7 +140,7 @@ function SyncBadge({ item, onRetry }: { item: Item; onRetry: () => void }) {
     return <Loader2 className="size-3.5 animate-spin text-subtle" aria-label={t("pending")} />;
   }
   if (item.sync_status === "synced") {
-    return <CalendarCheck2 className="size-3.5 text-primary dark:text-secondary" aria-label={t("synced")} />;
+    return <CalendarCheck2 className="size-3.5 text-accent" aria-label={t("synced")} />;
   }
   return <CalendarDays className="size-3.5 text-subtle" aria-hidden />;
 }

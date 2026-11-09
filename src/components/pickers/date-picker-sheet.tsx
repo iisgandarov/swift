@@ -51,7 +51,7 @@ export function DatePickerSheet({
             onClick={() => pick(q.value)}
             className={
               "h-10 rounded-full px-4 text-sm font-medium " +
-              (q.value === value ? "bg-primary text-white" : "bg-chip text-chip-fg")
+              (q.value === value ? "sel" : "bg-chip text-chip-fg")
             }
           >
             {q.label}

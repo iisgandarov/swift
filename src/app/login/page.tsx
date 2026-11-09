@@ -16,7 +16,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           </p>
         )}
         <GoogleSignIn demo={isDemoMode()} />
-        <p className="text-center text-sm font-semibold text-primary dark:text-secondary">{t("app.tagline")}</p>
+        <p className="text-center text-sm font-semibold text-accent">{t("app.tagline")}</p>
       </div>
     </main>
   );

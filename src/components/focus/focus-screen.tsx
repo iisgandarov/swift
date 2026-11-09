@@ -129,7 +129,7 @@ export function FocusScreen() {
       <PageTitle>{t("focus.title")}</PageTitle>
 
       <button type="button" onClick={() => setPicker(true)} disabled={state.running} className="card flex min-h-14 w-full items-center gap-3 px-4 text-left disabled:opacity-70">
-        <Target className="size-5 shrink-0 text-primary dark:text-secondary" aria-hidden />
+        <Target className="size-5 shrink-0 text-accent" aria-hidden />
         <span className="min-w-0 flex-1 truncate font-medium">{item ? item.title : t("focus.freeFocus")}</span>
         <span className="text-sm text-muted">{t("focus.pickTask")}</span>
         <ChevronRight className="size-5 text-subtle" aria-hidden />
@@ -142,7 +142,7 @@ export function FocusScreen() {
             type="button"
             disabled={state.running}
             onClick={() => setPreset(p.focus, p.rest)}
-            className={cn("h-10 rounded-full px-4 text-sm font-semibold disabled:opacity-60", isPreset(p.focus, p.rest) ? "bg-primary text-white" : "bg-chip text-chip-fg")}
+            className={cn("h-10 rounded-full px-4 text-sm font-semibold disabled:opacity-60", isPreset(p.focus, p.rest) ? "sel" : "bg-chip text-chip-fg")}
           >
             {p.focus}/{p.rest}
           </button>
@@ -153,7 +153,7 @@ export function FocusScreen() {
           onClick={() => setCustomOpen(true)}
           className={cn(
             "h-10 rounded-full px-4 text-sm font-semibold disabled:opacity-60",
-            !PRESETS.some((p) => isPreset(p.focus, p.rest)) ? "bg-primary text-white" : "bg-chip text-chip-fg",
+            !PRESETS.some((p) => isPreset(p.focus, p.rest)) ? "sel" : "bg-chip text-chip-fg",
           )}
         >
           {t("focus.custom")}
@@ -162,12 +162,12 @@ export function FocusScreen() {
 
       {/* ring */}
       <div className="relative mx-auto mt-8 aspect-square w-full max-w-[300px]">
-        <div aria-hidden className="absolute inset-8 rounded-full bg-secondary/10 blur-2xl dark:bg-secondary/20" />
+        <div aria-hidden className="absolute inset-8 rounded-full bg-secondary/10 blur-2xl dark:hidden" />
         <svg viewBox="0 0 280 280" className="relative size-full -rotate-90" aria-hidden>
           <defs>
             <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="var(--brand-secondary)" />
-              <stop offset="1" stopColor="var(--brand-primary)" />
+              <stop offset="0" style={{ stopColor: "var(--chart-1)" }} />
+              <stop offset="1" style={{ stopColor: "var(--chart-2)" }} />
             </linearGradient>
           </defs>
           <circle cx="140" cy="140" r={R} fill="none" style={{ stroke: "var(--chip)" }} strokeWidth="14" />
@@ -213,7 +213,7 @@ export function FocusScreen() {
             setNow(at);
             setState((s) => (s.running ? timer.pause(s, at) : timer.start(s, at)));
           }}
-          className="brand-gradient flex h-16 min-w-40 items-center justify-center gap-2 rounded-full px-8 text-lg font-semibold text-white shadow-[var(--shadow-float)]"
+          className="btn-primary flex h-16 min-w-40 items-center justify-center gap-2 rounded-full px-8 text-lg font-semibold"
         >
           {state.running ? <Pause className="size-6 fill-current" aria-hidden /> : <Play className="size-6 fill-current" aria-hidden />}
           {state.running ? t("focus.pause") : state.remainingMs < total ? t("focus.resume") : t("focus.start")}

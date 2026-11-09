@@ -104,7 +104,7 @@ export function TimePickerSheet({
             type="button"
             onClick={() => setEnd(addMinutesToTime(start, m).time)}
             className={
-              "h-10 rounded-full px-4 text-sm font-medium " + (duration === m ? "bg-primary text-white" : "bg-chip text-chip-fg")
+              "h-10 rounded-full px-4 text-sm font-medium " + (duration === m ? "sel" : "bg-chip text-chip-fg")
             }
           >
             {m < 60 ? `${m} ${t("focus.minutes")}` : `${m / 60} ${t("field.hours")}`}

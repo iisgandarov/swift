@@ -55,13 +55,13 @@ export function WeekStrip({
               aria-label={formatLongDate(d, locale)}
               className="flex flex-col items-center gap-1.5 py-1"
             >
-              <span className={cn("text-[12px] font-medium", isToday && !isSel ? "text-primary dark:text-secondary" : "text-muted")}>
+              <span className={cn("text-[12px] font-medium", isToday && !isSel ? "text-accent" : "text-muted")}>
                 {weekdayShort(d, locale)}
               </span>
               <span
                 className={cn(
                   "flex size-10 items-center justify-center rounded-full text-[17px] transition-colors duration-200",
-                  isSel ? "bg-primary font-semibold text-white shadow-[var(--shadow-float)]" : isToday ? "font-bold text-primary dark:text-secondary" : "",
+                  isSel ? "sel font-semibold" : isToday ? "font-bold text-accent" : "",
                 )}
               >
                 {Number(d.slice(8))}

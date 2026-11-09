@@ -80,7 +80,7 @@ export function HomeScreen({ aside }: { aside?: ReactNode }) {
         <header className="chrome flex items-center gap-3">
           <div
             aria-hidden
-            className="brand-gradient flex size-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold text-white shadow-[var(--shadow-float)]"
+            className="avatar flex size-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold"
           >
             {boot.data ? initials(name) : ""}
           </div>
@@ -116,7 +116,7 @@ export function HomeScreen({ aside }: { aside?: ReactNode }) {
               onClick={() => filterStore.set(f)}
               className={cn(
                 "h-10 shrink-0 whitespace-nowrap rounded-full px-4 text-[15px] font-medium transition-colors duration-200",
-                filter === f ? "bg-primary font-semibold text-white" : "bg-chip text-chip-fg hover:bg-surface-2",
+                filter === f ? "sel font-semibold" : "bg-chip text-chip-fg hover:bg-surface-2",
               )}
             >
               {t(`filter.${f}`)}
@@ -219,7 +219,7 @@ function QuoteCard({ today, locale }: { today: string; locale: "az" | "en" }) {
   const q = quoteOfTheDay(today);
   return (
     <figure className="card flex gap-3 px-5 py-4">
-      <Quote className="mt-0.5 size-6 shrink-0 rotate-180 fill-current text-secondary/60" aria-hidden />
+      <Quote className="mt-0.5 size-6 shrink-0 rotate-180 fill-current text-accent opacity-60" aria-hidden />
       <blockquote className="text-[15px] leading-relaxed text-muted">{q[locale]}</blockquote>
     </figure>
   );
@@ -233,7 +233,7 @@ function EmptyState() {
       <p className="mt-2 max-w-xs text-muted">{t("emptyBody")}</p>
       <Link
         href="/new/voice"
-        className="brand-gradient mt-6 inline-flex h-12 items-center gap-2 rounded-full px-6 font-semibold text-white shadow-[var(--shadow-float)]"
+        className="btn-primary mt-6 inline-flex h-12 items-center gap-2 rounded-full px-6 font-semibold"
       >
         <Mic className="size-5" aria-hidden />
         {t("emptyCta")}

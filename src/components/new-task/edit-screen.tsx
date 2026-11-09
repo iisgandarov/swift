@@ -22,7 +22,7 @@ export function EditScreen({ id, makeEvent }: { id: string; makeEvent: boolean }
         ) : (
           <div className="py-16 text-center">
             <p className="text-muted">{t("error.generic")}</p>
-            <Link href="/" className="mt-4 inline-block font-semibold text-primary">
+            <Link href="/" className="mt-4 inline-block font-semibold text-accent">
               {t("nav.home")}
             </Link>
           </div>

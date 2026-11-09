@@ -60,7 +60,7 @@ export function MonthGrid({ month, onMonthChange, selected, today, locale, onSel
               <span
                 className={cn(
                   "flex size-9 items-center justify-center rounded-full text-[15px] transition-colors",
-                  isSel ? "bg-primary font-semibold text-white" : isToday ? "font-bold text-primary dark:text-secondary" : "",
+                  isSel ? "sel font-semibold" : isToday ? "font-bold text-accent" : "",
                   !inMonth && !isSel && "text-subtle",
                   !isSel && "hover:bg-surface-2",
                 )}

@@ -54,7 +54,7 @@ export function CalendarScreen({ compact = false }: { compact?: boolean }) {
       <div className="mt-5 mb-3 flex items-baseline justify-between">
         <h2 className="text-lg font-bold">{selected === today ? t("home.today") : formatDayLabel(selected, locale)}</h2>
         {selected !== today && (
-          <button type="button" onClick={() => setSelected(null)} className="text-sm font-semibold text-primary dark:text-secondary">
+          <button type="button" onClick={() => setSelected(null)} className="text-sm font-semibold text-accent">
             {t("calendar.today")}
           </button>
         )}

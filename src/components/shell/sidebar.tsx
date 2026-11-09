@@ -22,7 +22,7 @@ export function Sidebar({ active: activeTab }: { active: TabKey | null }) {
 
       <Link
         href="/new/text"
-        className="brand-gradient mb-6 flex h-12 items-center justify-center gap-2 rounded-full font-semibold text-white shadow-[var(--shadow-float)] transition-transform duration-200 active:scale-[0.98]"
+        className="btn-primary mb-6 flex h-12 items-center justify-center gap-2 rounded-full font-semibold transition-transform duration-200 active:scale-[0.98]"
       >
         <Plus className="size-5" aria-hidden />
         {t("nav.newTask")}
@@ -39,7 +39,7 @@ export function Sidebar({ active: activeTab }: { active: TabKey | null }) {
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex h-11 items-center gap-3 rounded-2xl px-3 text-[15px] font-medium transition-colors duration-200",
-                    active ? "bg-chip text-primary dark:text-secondary" : "text-muted hover:bg-surface-2 hover:text-fg",
+                    active ? "bg-chip text-accent" : "text-muted hover:bg-surface-2 hover:text-fg",
                   )}
                 >
                   <Icon aria-hidden className="size-5" strokeWidth={active ? 2.2 : 1.8} />
@@ -52,7 +52,7 @@ export function Sidebar({ active: activeTab }: { active: TabKey | null }) {
       </nav>
 
       <div className="mt-auto px-2 text-xs leading-relaxed text-subtle">
-        <p lang="en" className="font-semibold text-primary dark:text-secondary">{t("app.tagline")}</p>
+        <p lang="en" className="font-semibold text-accent">{t("app.tagline")}</p>
         <p className="mt-1">{t("app.subline")}</p>
       </div>
     </aside>

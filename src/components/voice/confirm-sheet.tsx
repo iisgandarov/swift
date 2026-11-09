@@ -116,7 +116,7 @@ export function ConfirmSheet({
                         setPicker({ kind: "time", key: d.key });
                       } else update(d.key, { type: ty });
                     }}
-                    className={cn("h-8 rounded-full px-4 text-[13px] font-semibold", d.type === ty ? "bg-primary text-white" : "text-muted")}
+                    className={cn("h-8 rounded-full px-4 text-[13px] font-semibold", d.type === ty ? "sel" : "text-muted")}
                   >
                     {t(`type.${ty}`)}
                   </button>

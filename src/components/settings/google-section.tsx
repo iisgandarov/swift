@@ -66,7 +66,7 @@ export function GoogleSection() {
         {!connected || google.needs_reconnect ? (
           <a
             href="/api/google/connect"
-            className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-5 text-[15px] font-semibold text-white"
+            className="btn-primary inline-flex h-11 items-center justify-center rounded-full px-5 text-[15px] font-semibold"
           >
             {t("googleConnect")}
           </a>

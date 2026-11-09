@@ -30,7 +30,7 @@ export function CheckboxCircle({
         transition={{ duration: 0.25 }}
         className={cn(
           "flex size-[26px] items-center justify-center rounded-full border-2 transition-colors duration-200",
-          checked ? "border-primary bg-primary text-white dark:border-secondary dark:bg-primary" : "border-subtle",
+          checked ? "border-accent bg-accent text-on-accent" : "border-subtle",
         )}
       >
         {checked && <Check className="size-4" strokeWidth={3} aria-hidden />}

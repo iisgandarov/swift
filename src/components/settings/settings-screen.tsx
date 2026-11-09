@@ -161,7 +161,7 @@ export function SettingsScreen() {
 
       <Section title={ts("install")}>
         <div className="flex gap-3">
-          <Smartphone className="mt-0.5 size-5 shrink-0 text-primary dark:text-secondary" aria-hidden />
+          <Smartphone className="mt-0.5 size-5 shrink-0 text-accent" aria-hidden />
           <div className="space-y-2 text-[15px] leading-relaxed text-muted">
             <p>{ts("installIos")}</p>
             <p>{ts("installAndroid")}</p>
@@ -183,7 +183,7 @@ export function SettingsScreen() {
       </section>
 
       <footer className="pt-4 pb-2 text-center">
-        <p lang="en" className="font-semibold text-primary dark:text-secondary">{t("app.tagline")}</p>
+        <p lang="en" className="font-semibold text-accent">{t("app.tagline")}</p>
         <p lang="en" className="mt-1 text-xs tracking-[0.3em] text-subtle uppercase">{t("app.footer")}</p>
         <p className="mt-3 text-xs text-subtle">
           Swift · {ts("version", { version: process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0.0" })}

@@ -45,7 +45,7 @@ export function OptionSheet<T extends string | null>({
             >
               {o.icon}
               <span className="flex-1">{o.label}</span>
-              {o.value === value && <Check className="size-5 text-primary dark:text-secondary" aria-hidden />}
+              {o.value === value && <Check className="size-5 text-accent" aria-hidden />}
             </button>
           </li>
         ))}

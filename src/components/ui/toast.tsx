@@ -59,7 +59,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               {t.action && (
                 <button
                   type="button"
-                  className="min-h-9 shrink-0 rounded-full px-3 font-semibold text-secondary dark:text-primary"
+                  className="min-h-9 shrink-0 rounded-full px-3 font-semibold text-toast-action"
                   onClick={() => {
                     t.action?.onClick();
                     dismiss(t.id);

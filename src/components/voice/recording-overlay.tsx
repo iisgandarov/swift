@@ -68,7 +68,7 @@ export function RecordingOverlay({
               {levels.map((l, i) => (
                 <span
                   key={i}
-                  className="w-[5px] rounded-full bg-gradient-to-t from-primary to-secondary transition-[height] duration-75"
+                  className="w-[5px] rounded-full bg-accent transition-[height] duration-75"
                   style={{ height: mode === "recording" ? 8 + l * 72 : 8 + Math.abs(Math.sin(i)) * 16 }}
                 />
               ))}
@@ -80,7 +80,7 @@ export function RecordingOverlay({
               {mode === "recording" && (
                 <motion.span
                   aria-hidden
-                  className="absolute inset-0 rounded-full bg-secondary/40"
+                  className="absolute inset-0 rounded-full bg-secondary/40 dark:hidden"
                   animate={{ scale: [1, 1.35, 1], opacity: [0.6, 0, 0.6] }}
                   transition={{ duration: 1.8, repeat: Infinity }}
                 />
@@ -91,7 +91,7 @@ export function RecordingOverlay({
                 disabled={mode !== "recording"}
                 aria-label={t("tapToStop")}
                 data-testid="voice-stop"
-                className="brand-gradient relative flex size-24 items-center justify-center rounded-full text-white shadow-[0_0_48px_rgba(46,161,255,0.6)]"
+                className="btn-primary relative flex size-24 items-center justify-center rounded-full"
               >
                 {mode === "recording" ? (
                   <Square className="size-8 fill-current" aria-hidden />

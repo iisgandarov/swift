@@ -24,7 +24,7 @@ export function Segmented<T extends string | number>({
           onClick={() => onChange(o.value)}
           className={cn(
             "h-9 flex-1 whitespace-nowrap rounded-full px-3 text-[14px] font-semibold transition-colors duration-200",
-            value === o.value ? "bg-surface text-primary shadow-sm dark:bg-primary dark:text-white" : "text-muted",
+            value === o.value ? "seg-on" : "text-muted",
           )}
         >
           {o.label}
@@ -42,7 +42,7 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={cn("relative h-8 w-[52px] shrink-0 rounded-full transition-colors duration-200", checked ? "bg-primary" : "bg-surface-2 ring-1 ring-line")}
+      className={cn("relative h-8 w-[52px] shrink-0 rounded-full transition-colors duration-200", checked ? "bg-accent" : "bg-surface-2 ring-1 ring-line")}
     >
       <span className={cn("absolute top-1 left-1 size-6 rounded-full bg-white shadow transition-transform duration-200", checked && "translate-x-5")} />
     </button>

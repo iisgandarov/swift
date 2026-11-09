@@ -182,7 +182,7 @@ export function ItemForm({
             onClick={() => setType(ty)}
             className={cn(
               "h-10 rounded-full text-[15px] font-semibold transition-colors duration-200",
-              form.type === ty ? "bg-surface text-primary shadow-sm dark:bg-primary dark:text-white" : "text-muted",
+              form.type === ty ? "seg-on" : "text-muted",
             )}
           >
             {t(`type.${ty}`)}

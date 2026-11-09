@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 type Variant = "primary" | "secondary" | "ghost" | "danger";
 
 const styles: Record<Variant, string> = {
-  primary: "bg-primary text-white shadow-[var(--shadow-float)] dark:brand-gradient",
+  primary: "btn-primary",
   secondary: "bg-chip text-chip-fg",
   ghost: "text-fg hover:bg-surface-2",
   danger: "bg-danger text-white",

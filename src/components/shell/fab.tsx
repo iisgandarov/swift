@@ -23,7 +23,7 @@ export function Fab() {
     <button
       type="button"
       aria-label={t("newTask")}
-      className="chrome brand-gradient fixed right-5 z-40 flex size-16 items-center justify-center rounded-full text-white shadow-[var(--shadow-float)] transition-transform duration-200 active:scale-95 lg:hidden"
+      className="chrome fab fixed right-5 z-40 flex size-14 items-center justify-center rounded-full transition-transform duration-200 active:scale-95 lg:hidden"
       style={{ bottom: "calc(var(--nav-h) + var(--safe-bottom) + 16px)" }}
       onContextMenu={(e) => e.preventDefault()}
       onPointerDown={() => {
@@ -43,7 +43,7 @@ export function Fab() {
         navigate("/new/text");
       }}
     >
-      <Plus className="size-8" strokeWidth={2.2} aria-hidden />
+      <Plus className="size-7" strokeWidth={2} aria-hidden />
     </button>
   );
 }

@@ -53,8 +53,8 @@ export function StatsScreen() {
             <BarChart data={chart} margin={{ top: 4, right: 0, bottom: 0, left: -28 }}>
               <defs>
                 <linearGradient id="bar" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stopColor="var(--brand-secondary)" />
-                  <stop offset="1" stopColor="var(--brand-primary)" />
+                  <stop offset="0" style={{ stopColor: "var(--chart-1)" }} />
+                  <stop offset="1" style={{ stopColor: "var(--chart-2)" }} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} />
@@ -101,7 +101,7 @@ export function StatsScreen() {
 function StatCard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string | number; accent?: boolean }) {
   return (
     <div className="card p-4">
-      <span aria-hidden className={"mb-3 flex size-9 items-center justify-center rounded-xl [&>svg]:size-5 " + (accent ? "bg-[var(--cat-orange-chip)] text-[var(--cat-orange-text)]" : "bg-chip text-primary dark:text-secondary")}>
+      <span aria-hidden className={"mb-3 flex size-9 items-center justify-center rounded-xl [&>svg]:size-5 " + (accent ? "bg-[var(--cat-orange-chip)] text-[var(--cat-orange-text)]" : "bg-chip text-accent")}>
         {icon}
       </span>
       <p className="text-2xl font-bold tabular-nums">{value}</p>

@@ -39,7 +39,7 @@ export function BellSheet({ open, onClose, items }: { open: boolean; onClose: ()
       )}
       {next.length > 0 && (
         <>
-          <h3 className="mt-5 mb-1 text-sm font-semibold text-primary dark:text-secondary">{t("bellNext")}</h3>
+          <h3 className="mt-5 mb-1 text-sm font-semibold text-accent">{t("bellNext")}</h3>
           <ul className="divide-y divide-divider">
             {next.map((i) => {
               const tm = itemTimes(i, tz)!;
