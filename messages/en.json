@@ -214,7 +214,8 @@
     "privateTitle": "This app is private.",
     "privateBody": "Swift is a personal app. This Google account doesn't have access.",
     "tryAnother": "Use another account",
-    "error": "Sign-in didn't work. Please try again."
+    "error": "Sign-in didn't work. Please try again.",
+    "setupError": "The database isn't set up yet. Run supabase/migrations/0001_init.sql in Supabase, then sign in again."
   },
   "error": {
     "generic": "Something went wrong.",

@@ -214,7 +214,8 @@
     "privateTitle": "Bu tətbiq şəxsidir.",
     "privateBody": "Swift şəxsi tətbiqdir. Bu Google hesabının girişi yoxdur.",
     "tryAnother": "Başqa hesabla daxil ol",
-    "error": "Giriş alınmadı. Yenidən cəhd et."
+    "error": "Giriş alınmadı. Yenidən cəhd et.",
+    "setupError": "Verilənlər bazası hazır deyil. Supabase-də SQL faylını (supabase/migrations/0001_init.sql) işə sal, sonra yenidən daxil ol."
   },
   "error": {
     "generic": "Xəta baş verdi.",

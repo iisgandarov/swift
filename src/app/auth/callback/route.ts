@@ -22,7 +22,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/private?email=${encodeURIComponent(data.user.email ?? "")}`);
   }
 
-  const ctx = await getAppContext();
-  if (ctx) await ensureUserSetup(ctx);
+  try {
+    const ctx = await getAppContext();
+    if (ctx) await ensureUserSetup(ctx);
+  } catch (err) {
+    // most often: the database tables were not created yet (supabase/migrations/0001_init.sql)
+    console.error("[auth callback] first-run setup failed", err);
+    return NextResponse.redirect(`${origin}/login?error=setup`);
+  }
   return NextResponse.redirect(`${origin}/`);
 }

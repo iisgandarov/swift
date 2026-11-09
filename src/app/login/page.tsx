@@ -12,7 +12,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       <div className="w-full space-y-6">
         {error && (
           <p role="alert" className="text-center text-sm text-danger">
-            {t("auth.error")}
+            {error === "setup" ? t("auth.setupError") : t("auth.error")}
           </p>
         )}
         <GoogleSignIn demo={isDemoMode()} />
