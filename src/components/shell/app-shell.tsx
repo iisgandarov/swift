@@ -6,6 +6,7 @@ import { BottomNav } from "./bottom-nav";
 import { Sidebar } from "./sidebar";
 import { Fab } from "./fab";
 import { OfflinePill } from "./offline-pill";
+import { ReconnectBanner } from "./reconnect-banner";
 
 const FAB_ROUTES = new Set(["/", "/calendar"]);
 const FULLSCREEN_ROUTES = ["/new", "/edit"];
@@ -26,6 +27,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               : "pb-[calc(var(--nav-h)+var(--safe-bottom)+96px)]")
           }
         >
+          {!fullscreen && <ReconnectBanner />}
           {children}
         </main>
       </div>

@@ -205,7 +205,8 @@
     "installAndroid": "Android: Swift-i Chrome-da aç, ⋮ menyusuna, sonra \"Tətbiqi quraşdır\"-a toxun.",
     "export": "Məlumatlarımı ixrac et (JSON)",
     "signOut": "Çıxış",
-    "version": "Versiya {version}"
+    "version": "Versiya {version}",
+    "googleNotConfigured": "Serverdə Google OAuth qurulmayıb (SETUP.md-ə bax)."
   },
   "auth": {
     "signIn": "Google ilə davam et",

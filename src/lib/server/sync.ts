@@ -3,6 +3,7 @@ import { planSync, type SyncAction } from "@/lib/domain/rules";
 import type { Item } from "@/lib/domain/types";
 import type { AppContext } from "./context";
 import { getCalendarClient } from "@/lib/google/client";
+export { ReconnectRequired } from "@/lib/google/client";
 
 /**
  * Pushes an item change to Google Calendar. Never throws: on failure the item keeps its
@@ -20,7 +21,15 @@ export async function syncItem(
     return after;
   }
 
-  const calendar = await getCalendarClient(ctx);
+  let calendar: Awaited<ReturnType<typeof getCalendarClient>>;
+  try {
+    calendar = await getCalendarClient(ctx);
+  } catch (err) {
+    // token revoked / expired: keep the item, flag it so the user can retry after reconnecting
+    const message = err instanceof Error ? err.message : String(err);
+    if (!after) return null;
+    return ctx.repo.updateItem(after.id, { sync_status: after.type === "event" ? "failed" : "none", sync_error: message.slice(0, 500) });
+  }
   if (!calendar) {
     // Not connected: events live only in the app. Clear any stale pending flag.
     if (after && after.sync_status === "pending") {

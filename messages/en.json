@@ -205,7 +205,8 @@
     "installAndroid": "Android: open Swift in Chrome, tap ⋮, then \"Install app\".",
     "export": "Export my data (JSON)",
     "signOut": "Sign out",
-    "version": "Version {version}"
+    "version": "Version {version}",
+    "googleNotConfigured": "Google OAuth isn't configured on the server yet (see SETUP.md)."
   },
   "auth": {
     "signIn": "Continue with Google",

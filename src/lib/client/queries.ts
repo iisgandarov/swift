@@ -182,3 +182,57 @@ export function useCategoryMutations() {
     }),
   };
 }
+
+// ---------------------------------------------------------------- Google Calendar
+
+export interface GoogleEventLite {
+  id: string;
+  title: string;
+  date: string;
+  start_at: string | null;
+  end_at: string | null;
+  all_day: boolean;
+  html_link: string | null;
+  color: string | null;
+}
+
+export function useGoogleEvents(from: string, to: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.googleEvents(from, to),
+    queryFn: () =>
+      api<{ events: GoogleEventLite[]; status: "ok" | "not_connected" | "reconnect_required" | "error" }>(
+        `/api/calendar/events?from=${from}&to=${to}`,
+      ),
+    enabled,
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useGoogleCalendars(enabled: boolean) {
+  return useQuery({
+    queryKey: ["google-calendars"],
+    queryFn: () => api<{ calendars: { id: string; summary: string; primary: boolean }[] }>("/api/google/calendars"),
+    enabled,
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useGoogleMutations() {
+  const qc = useQueryClient();
+  const setStatus = (google: GoogleStatus) => qc.setQueryData<Bootstrap>(qk.bootstrap, (b) => (b ? { ...b, google } : b));
+  return {
+    disconnect: useMutation({
+      mutationFn: () => api("/api/google/disconnect", { method: "POST" }),
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: qk.bootstrap });
+        qc.removeQueries({ queryKey: ["google-events"] });
+      },
+    }),
+    setCalendar: useMutation({
+      mutationFn: (calendar_id: string) =>
+        api<{ google: GoogleStatus }>("/api/google/settings", { method: "PATCH", json: { calendar_id } }).then((r) => r.google),
+      onSuccess: setStatus,
+    }),
+  };
+}
