@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { AppLink as Link } from "@/components/shell/app-link";
+import { navigate } from "@/lib/client/nav";
 import { useTranslations } from "next-intl";
 import { Bell, Mic, Quote } from "lucide-react";
 import type { Item } from "@/lib/domain/types";
@@ -45,7 +45,6 @@ const filterStore = {
 export function HomeScreen({ aside }: { aside?: ReactNode }) {
   const t = useTranslations();
   const th = useTranslations("home");
-  const router = useRouter();
   const { locale, tz, timeFormat, today, hour, profile } = useAppSettings();
   const boot = useBootstrap();
   const categories = useCategories();
@@ -65,12 +64,12 @@ export function HomeScreen({ aside }: { aside?: ReactNode }) {
 
   function onMenu(action: MenuAction, item: Item) {
     setMenuItem(null);
-    if (action === "edit") router.push(`/edit/${item.id}`);
+    if (action === "edit") navigate(`/edit/${item.id}`);
     if (action === "changeDate") setDateItem(item);
     if (action === "delete") setDeleteItem(item);
     if (action === "toggleType") {
       if (item.type === "event") actions.patch(item, { type: "task" });
-      else router.push(`/edit/${item.id}?type=event`);
+      else navigate(`/edit/${item.id}?type=event`);
     }
   }
 
@@ -233,7 +232,7 @@ function EmptyState() {
       <h2 className="text-lg font-bold">{t("emptyTitle")}</h2>
       <p className="mt-2 max-w-xs text-muted">{t("emptyBody")}</p>
       <Link
-        href="/new?voice=1"
+        href="/new/voice"
         className="brand-gradient mt-6 inline-flex h-12 items-center gap-2 rounded-full px-6 font-semibold text-white shadow-[var(--shadow-float)]"
       >
         <Mic className="size-5" aria-hidden />

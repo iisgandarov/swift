@@ -1,7 +1,4 @@
-import { EditScreen } from "@/components/new-task/edit-screen";
-
-export default async function EditPage({ params, searchParams }: PageProps<"/edit/[id]">) {
-  const { id } = await params;
-  const { type } = await searchParams;
-  return <EditScreen id={id} makeEvent={type === "event"} />;
+// Rendered by the client app shell (src/components/shell/app-shell.tsx); this file only makes the URL routable.
+export default function Page() {
+  return null;
 }

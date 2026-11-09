@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { AppLink as Link } from "@/components/shell/app-link";
 import { useTranslations } from "next-intl";
 import { useItems } from "@/lib/client/queries";
 import { useAppSettings } from "@/hooks/use-app-settings";

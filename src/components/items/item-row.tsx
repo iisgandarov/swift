@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion, useMotionValue, useReducedMotion, useTransform, type PanInfo } from "motion/react";
 import { CalendarCheck2, CalendarDays, CalendarX2, Check, EllipsisVertical, Loader2, RotateCw, Trash2 } from "lucide-react";
@@ -11,6 +10,7 @@ import { CheckboxCircle } from "@/components/ui/checkbox-circle";
 import { CategoryChip } from "@/components/ui/category-chip";
 import type { UiLocale } from "@/lib/dates";
 import { cn } from "@/lib/cn";
+import { navigate } from "@/lib/client/nav";
 
 const SWIPE = 96;
 
@@ -32,7 +32,6 @@ export interface ItemRowProps {
 export function ItemRow(props: ItemRowProps) {
   const { item, category, locale, overdue, onToggle, onDelete, onMenu, onRetrySync } = props;
   const t = useTranslations();
-  const router = useRouter();
   const reduce = useReducedMotion();
   const x = useMotionValue(0);
   const doneOpacity = useTransform(x, [0, SWIPE], [0, 1]);
@@ -76,7 +75,7 @@ export function ItemRow(props: ItemRowProps) {
         }}
         className="relative flex min-h-[76px] cursor-pointer items-center gap-4 bg-surface py-3 pr-2 pl-4"
         onClick={() => {
-          if (!dragged.current) router.push(`/edit/${item.id}`);
+          if (!dragged.current) navigate(`/edit/${item.id}`);
         }}
       >
         <CheckboxCircle checked={done} onChange={() => onToggle(item)} label={done ? t("action.reopen") : t("action.complete")} />

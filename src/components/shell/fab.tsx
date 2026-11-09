@@ -1,16 +1,15 @@
 "use client";
 
 import { useRef } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 import { tick } from "@/lib/haptics";
+import { navigate } from "@/lib/client/nav";
 
 const LONG_PRESS_MS = 450;
 
 /** Floating + button: tap → New Task, long-press → New Task with voice recording started. */
 export function Fab() {
-  const router = useRouter();
   const t = useTranslations("nav");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressed = useRef(false);
@@ -33,7 +32,7 @@ export function Fab() {
         timer.current = setTimeout(() => {
           longPressed.current = true;
           tick(15);
-          router.push("/new?voice=1");
+          navigate("/new/voice");
         }, LONG_PRESS_MS);
       }}
       onPointerUp={clear}
@@ -41,7 +40,7 @@ export function Fab() {
       onPointerCancel={clear}
       onClick={() => {
         if (longPressed.current) return;
-        router.push("/new");
+        navigate("/new/text");
       }}
     >
       <Plus className="size-8" strokeWidth={2.2} aria-hidden />

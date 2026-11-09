@@ -30,6 +30,7 @@
   --shadow-float: 0 10px 30px rgba(0, 87, 255, 0.35);
   --glow: transparent;
   --focus-ring: rgba(0, 87, 255, 0.45);
+  --accent: var(--brand-primary);
 
   /* status */
   --danger: #c81e1e;
@@ -91,6 +92,7 @@
   --shadow-float: 0 0 32px rgba(46, 161, 255, 0.55), 0 8px 24px rgba(0, 87, 255, 0.45);
   --glow: rgba(46, 161, 255, 0.35);
   --focus-ring: rgba(46, 161, 255, 0.6);
+  --accent: var(--brand-secondary);
 
   --danger: #f87171;
   --danger-soft: rgba(248, 113, 113, 0.14);
@@ -118,6 +120,7 @@
 @theme inline {
   --color-primary: var(--brand-primary);
   --color-secondary: var(--brand-secondary);
+  --color-accent: var(--accent);
   --color-brand-light: var(--brand-light);
   --color-brand-dark: var(--brand-dark);
 

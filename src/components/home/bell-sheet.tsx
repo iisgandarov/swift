@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { AppLink as Link } from "@/components/shell/app-link";
 import { useTranslations } from "next-intl";
 import type { Item } from "@/lib/domain/types";
 import { Sheet } from "@/components/ui/sheet";

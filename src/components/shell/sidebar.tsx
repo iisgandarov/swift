@@ -1,15 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { AppLink as Link } from "./app-link";
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
-import { NAV_ITEMS, isActive } from "@/lib/nav";
+import { NAV_ITEMS } from "@/lib/nav";
+import type { TabKey } from "@/lib/client/nav";
 import { cn } from "@/lib/cn";
 
-export function Sidebar() {
-  const pathname = usePathname();
+export function Sidebar({ active: activeTab }: { active: TabKey | null }) {
   const t = useTranslations();
   return (
     <aside className="chrome sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-line bg-surface/60 px-4 py-6 backdrop-blur-xl lg:flex">
@@ -22,7 +21,7 @@ export function Sidebar() {
       </Link>
 
       <Link
-        href="/new"
+        href="/new/text"
         className="brand-gradient mb-6 flex h-12 items-center justify-center gap-2 rounded-full font-semibold text-white shadow-[var(--shadow-float)] transition-transform duration-200 active:scale-[0.98]"
       >
         <Plus className="size-5" aria-hidden />
@@ -32,7 +31,7 @@ export function Sidebar() {
       <nav aria-label={t("nav.main")}>
         <ul className="space-y-1">
           {NAV_ITEMS.map(({ key, href, icon: Icon }) => {
-            const active = isActive(pathname, href);
+            const active = activeTab === key;
             return (
               <li key={key}>
                 <Link

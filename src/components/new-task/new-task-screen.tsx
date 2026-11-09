@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Loader2, MicOff, Sparkles } from "lucide-react";
 import { draftToInput } from "@/lib/domain/drafts";
@@ -15,12 +14,12 @@ import { RecordingOverlay } from "@/components/voice/recording-overlay";
 import { ConfirmSheet } from "@/components/voice/confirm-sheet";
 import { useVoiceFlow, type VoiceLang, type VoiceResult } from "@/components/voice/use-voice-flow";
 import { tick } from "@/lib/haptics";
+import { navigate } from "@/lib/client/nav";
 import { emptyForm, ItemForm, type FormState } from "./item-form";
 import { FormFrame } from "./form-frame";
 
 export function NewTaskScreen({ startVoice }: { startVoice: boolean }) {
   const t = useTranslations();
-  const router = useRouter();
   const toast = useToast();
   const profile = useProfile();
   const updateProfile = useUpdateProfile();
@@ -64,7 +63,7 @@ export function NewTaskScreen({ startVoice }: { startVoice: boolean }) {
     createFrom(result)
       .then((created) => {
         flow.close();
-        router.push("/");
+        navigate("/", { replace: true });
         toast({
           message: t("voice.created", { count: created.length }),
           duration: 5000,
@@ -75,7 +74,7 @@ export function NewTaskScreen({ startVoice }: { startVoice: boolean }) {
         });
       })
       .catch(() => toast({ message: t("error.generic"), tone: "error" }));
-  }, [autoCreate, flow, createFrom, router, toast, t]);
+  }, [autoCreate, flow, createFrom, toast, t]);
 
   const overlayMode = flow.state === "recording" ? "recording" : flow.state === "processing" ? "processing" : null;
 
@@ -140,7 +139,7 @@ export function NewTaskScreen({ startVoice }: { startVoice: boolean }) {
             const created = await createFrom(flow.result);
             flow.close();
             toast({ message: t("voice.created", { count: created.length }), duration: 3000 });
-            router.push("/");
+            navigate("/", { replace: true });
           } catch {
             toast({ message: t("error.generic"), tone: "error" });
           }

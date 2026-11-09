@@ -1,5 +1,4 @@
-import { StatsScreen } from "@/components/stats/stats-screen";
-
-export default function StatsPage() {
-  return <StatsScreen />;
+// Rendered by the client app shell (src/components/shell/app-shell.tsx); this file only makes the URL routable.
+export default function Page() {
+  return null;
 }

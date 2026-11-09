@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ArrowLeft, CalendarDays, ChevronRight, Clock3, FileText, Flag, Folder } from "lucide-react";
 import type { Item, ItemType, Priority } from "@/lib/domain/types";
@@ -20,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { tick } from "@/lib/haptics";
 import { cn } from "@/lib/cn";
+import { goBack } from "@/lib/client/nav";
 
 export interface FormState {
   title: string;
@@ -69,7 +69,6 @@ export function ItemForm({
   onTitleChange?: (title: string) => void;
 }) {
   const t = useTranslations();
-  const router = useRouter();
   const toast = useToast();
   const { locale, today, timeFormat, defaultEventMinutes } = useAppSettings();
   const categories = useCategories();
@@ -95,8 +94,7 @@ export function ItemForm({
   }
 
   function close() {
-    if (window.history.length > 1) router.back();
-    else router.push("/");
+    goBack("/");
   }
 
   async function submit() {

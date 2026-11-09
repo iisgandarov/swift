@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { AppLink as Link } from "@/components/shell/app-link";
 import { useTranslations } from "next-intl";
 import { ExternalLink } from "lucide-react";
 import { formatTimeRange, type UiLocale } from "@/lib/dates";

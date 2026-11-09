@@ -1,7 +1,4 @@
-import { HomeScreen } from "@/components/home/home-screen";
-import { DesktopCalendarPanel } from "@/components/home/desktop-calendar-panel";
-
-export default function HomePage() {
-  // desktop: the calendar sits in a right-side panel next to the list
-  return <HomeScreen aside={<DesktopCalendarPanel />} />;
+// Rendered by the client app shell (src/components/shell/app-shell.tsx); this file only makes the URL routable.
+export default function Page() {
+  return null;
 }

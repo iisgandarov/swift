@@ -1,6 +1,8 @@
 import { CalendarDays, ChartColumn, Goal, House, Settings, type LucideIcon } from "lucide-react";
 
-export type NavKey = "home" | "calendar" | "focus" | "stats" | "settings";
+import type { TabKey } from "@/lib/client/nav";
+
+export type NavKey = TabKey;
 
 export const NAV_ITEMS: { key: NavKey; href: string; icon: LucideIcon }[] = [
   { key: "home", href: "/", icon: House },
@@ -10,6 +12,3 @@ export const NAV_ITEMS: { key: NavKey; href: string; icon: LucideIcon }[] = [
   { key: "settings", href: "/settings", icon: Settings },
 ];
 
-export function isActive(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
-}
