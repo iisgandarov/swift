@@ -6,21 +6,45 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
+    "@date-fns/tz": "^1.5.0",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.119.0",
+    "@tanstack/query-async-storage-persister": "^5.107.1",
+    "@tanstack/react-query": "^5.107.1",
+    "@tanstack/react-query-persist-client": "^5.107.1",
+    "date-fns": "^4.4.0",
+    "idb-keyval": "^6.3.0",
+    "lucide-react": "^1.70.0",
+    "motion": "^14.10.1",
     "next": "16.4.5",
+    "next-intl": "^4.14.9",
+    "openai": "^7.53.0",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "recharts": "^3.10.1",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/turbopack": "^4",
-    "@types/node": "^20",
+    "@types/node": "^22.20.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
+    "opentype.js": "^2.0.0",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.1.0"
   }
 }

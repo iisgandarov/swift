@@ -1,0 +1,222 @@
+{
+  "app": {
+    "name": "Swift",
+    "subtitle": "Tapşırıq meneceri",
+    "tagline": "Plan Today. A Brighter Tomorrow.",
+    "subline": "Hər dəfə bir tapşırıqla irəli.",
+    "footer": "Get things done. Faster."
+  },
+  "nav": {
+    "home": "Ana səhifə",
+    "calendar": "Təqvim",
+    "focus": "Fokus",
+    "stats": "Statistika",
+    "settings": "Parametrlər",
+    "newTask": "Yeni tapşırıq",
+    "main": "Əsas naviqasiya"
+  },
+  "filter": {
+    "all": "Hamısı",
+    "today": "Bu gün",
+    "upcoming": "Yaxın tarix",
+    "completed": "Tamamlanan"
+  },
+  "greeting": {
+    "morning": "Günaydın,",
+    "afternoon": "Günortanız xeyir,",
+    "evening": "Axşamınız xeyir,"
+  },
+  "home": {
+    "today": "Bu gün",
+    "tomorrow": "Sabah",
+    "upcoming": "Yaxın tarix",
+    "later": "Sonra",
+    "noDate": "Tarixsiz",
+    "completed": "Tamamlanan",
+    "notifications": "Bildirişlər",
+    "emptyTitle": "Gün sakit görünür",
+    "emptyBody": "Hələ heç nə planlaşdırılmayıb. Ağlındakını de, Swift qalanını həll etsin.",
+    "emptyCta": "Səslə ilk tapşırığını əlavə et",
+    "emptyFilter": "Burada hələ heç nə yoxdur.",
+    "bellOverdue": "Gecikmiş",
+    "bellNext": "Bu gün qarşıda",
+    "bellEmpty": "Hər şey qaydasındadır."
+  },
+  "newTask": {
+    "title": "Yeni Tapşırıq",
+    "editTitle": "Redaktə",
+    "placeholder": "Nə etmək istəyirsən?",
+    "understand": "Anla",
+    "back": "Geri"
+  },
+  "field": {
+    "date": "Tarix",
+    "time": "Vaxt",
+    "category": "Kateqoriya",
+    "priority": "Prioritet",
+    "notes": "Qeyd",
+    "notesPlaceholder": "Qeyd əlavə et...",
+    "type": "Növ",
+    "none": "Yoxdur",
+    "noTime": "Vaxtsız",
+    "allDay": "Bütün gün",
+    "start": "Başlama",
+    "end": "Bitmə",
+    "duration": "Müddət"
+  },
+  "priority": {
+    "low": "Aşağı",
+    "medium": "Orta",
+    "high": "Yüksək"
+  },
+  "type": {
+    "task": "Tapşırıq",
+    "event": "Tədbir"
+  },
+  "voice": {
+    "button": "Səsli versiya",
+    "listening": "Dinləyirəm...",
+    "processing": "Anlayıram...",
+    "tapToStop": "Dayandırmaq üçün toxun",
+    "cancel": "Ləğv et",
+    "language": "Səs dili",
+    "auto": "Avto",
+    "permissionTitle": "Mikrofon bağlıdır",
+    "permissionBody": "Swift üçün mikrofona icazə ver. iPhone: Ayarlar → Safari → Mikrofon → İcazə ver. Android: ünvan sətrindəki kilid ikonuna toxun → İcazələr → Mikrofon.",
+    "unsupported": "Bu brauzer səs yazmağı dəstəkləmir.",
+    "offline": "Səsli versiya üçün internet lazımdır.",
+    "nothingHeard": "Tapşırıq eşitmədim. Yenidən cəhd edək?",
+    "error": "Anlayarkən xəta baş verdi. Sözlərin saxlanıldı, redaktə edə bilərsən.",
+    "rateLimited": "Bu saat üçün səs limiti doldu. Bir az sonra yenidən cəhd et.",
+    "confirmTitle": "Yadda saxlamadan əvvəl yoxla",
+    "createAll": "Hamısını yarat",
+    "recordAgain": "Yenidən danış",
+    "remove": "Sil",
+    "transcript": "Dediyin",
+    "created": "{count} element yaradıldı"
+  },
+  "action": {
+    "create": "Tapşırıq yarat",
+    "save": "Yadda saxla",
+    "cancel": "Ləğv et",
+    "delete": "Sil",
+    "edit": "Redaktə et",
+    "changeDate": "Tarixi dəyiş",
+    "makeEvent": "Tədbirə çevir",
+    "makeTask": "Tapşırığa çevir",
+    "undo": "Geri al",
+    "done": "Hazır",
+    "close": "Bağla",
+    "retry": "Yenidən cəhd et",
+    "more": "Digər əməliyyatlar",
+    "complete": "Tamamlandı kimi qeyd et",
+    "reopen": "Tamamlanmamış et",
+    "clear": "Təmizlə"
+  },
+  "state": {
+    "overdue": "Gecikmiş",
+    "offline": "Oflayn",
+    "loading": "Yüklənir...",
+    "deleted": "Silindi",
+    "completed": "Tamamlandı",
+    "saved": "Yadda saxlanıldı"
+  },
+  "sync": {
+    "synced": "Təqvimə əlavə olundu",
+    "failed": "Təqvimə göndərilmədi",
+    "pending": "Təqvimə göndərilir...",
+    "retry": "Yenidən cəhd et",
+    "reconnect": "Google Təqvim ayrıldı. Yenidən qoşul",
+    "fromGoogle": "Google Təqvim"
+  },
+  "confirmDelete": {
+    "title": "Silinsin?",
+    "body": "Bunu geri qaytarmaq olmayacaq.",
+    "bodyEvent": "Google Təqvimdən də silinəcək."
+  },
+  "calendar": {
+    "openMonth": "Ay görünüşünü aç",
+    "noItems": "Bu gün üçün heç nə planlaşdırılmayıb.",
+    "untimed": "Tapşırıqlar",
+    "prevWeek": "Əvvəlki həftə",
+    "nextWeek": "Növbəti həftə",
+    "today": "Bu gün"
+  },
+  "focus": {
+    "title": "Fokus",
+    "pickTask": "Tapşırıq seç",
+    "freeFocus": "Sərbəst fokus",
+    "start": "Başla",
+    "pause": "Fasilə",
+    "resume": "Davam et",
+    "reset": "Sıfırla",
+    "focusPhase": "Fokus",
+    "breakPhase": "Fasilə",
+    "custom": "Fərdi",
+    "minutes": "dəq",
+    "finishedTitle": "Sessiya bitdi",
+    "markDone": "\"{title}\" tamamlandı kimi qeyd olunsun?",
+    "keepGoing": "Hələ yox",
+    "todayMinutes": "Bu gün fokus"
+  },
+  "stats": {
+    "title": "Statistika",
+    "completedToday": "Bu gün tamamlanan",
+    "completedWeek": "Bu həftə",
+    "rate": "Tamamlanma faizi",
+    "streak": "Ardıcıl günlər",
+    "streakDays": "{count} gün",
+    "focusWeek": "Bu həftə fokus",
+    "last7": "Son 7 gün",
+    "byCategory": "Kateqoriyalar üzrə",
+    "tasksVsEvents": "Tapşırıq və tədbirlər",
+    "noCategory": "Kateqoriyasız"
+  },
+  "settings": {
+    "title": "Parametrlər",
+    "profile": "Profil",
+    "name": "Ad",
+    "uiLanguage": "Tətbiq dili",
+    "voiceLanguage": "Səs dili",
+    "theme": "Mövzu",
+    "themeSystem": "Sistem",
+    "themeLight": "Açıq",
+    "themeDark": "Tünd",
+    "google": "Google Təqvim",
+    "googleConnect": "Google Təqvimi qoş",
+    "googleDisconnect": "Ayır",
+    "googleConnected": "{email} kimi qoşulub",
+    "googleNotConnected": "Qoşulmayıb. Tədbirlər yalnız Swift-də qalır.",
+    "targetCalendar": "Yeni tədbirlər üçün təqvim",
+    "eventDuration": "Tədbirin standart müddəti",
+    "timeFormat": "Vaxt formatı",
+    "h24": "24 saat",
+    "h12": "12 saat",
+    "autoCreate": "Təsdiqsiz birbaşa yarat",
+    "autoCreateHint": "Səsli elementlər dərhal yaradılır, 5 saniyə ərzində geri almaq olar.",
+    "categories": "Kateqoriyalar",
+    "addCategory": "Kateqoriya əlavə et",
+    "nameAz": "Ad (Azərbaycanca)",
+    "nameEn": "Ad (İngiliscə)",
+    "color": "Rəng",
+    "install": "Swift-i quraşdır",
+    "installIos": "iPhone: Swift-i Safari-də aç, Paylaş düyməsinə, sonra \"Ana ekrana əlavə et\"-ə toxun.",
+    "installAndroid": "Android: Swift-i Chrome-da aç, ⋮ menyusuna, sonra \"Tətbiqi quraşdır\"-a toxun.",
+    "export": "Məlumatlarımı ixrac et (JSON)",
+    "signOut": "Çıxış",
+    "version": "Versiya {version}"
+  },
+  "auth": {
+    "signIn": "Google ilə davam et",
+    "welcome": "Swift-ə xoş gəldin",
+    "privateTitle": "Bu tətbiq şəxsidir.",
+    "privateBody": "Swift şəxsi tətbiqdir. Bu Google hesabının girişi yoxdur.",
+    "tryAnother": "Başqa hesabla daxil ol",
+    "error": "Giriş alınmadı. Yenidən cəhd et."
+  },
+  "error": {
+    "generic": "Xəta baş verdi.",
+    "tryAgain": "Yenidən cəhd et",
+    "offlineSave": "Oflaynsan. Dəyişikliklər hazırda yadda saxlanıla bilməz."
+  }
+}

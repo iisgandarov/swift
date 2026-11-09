@@ -1,0 +1,222 @@
+{
+  "app": {
+    "name": "Swift",
+    "subtitle": "Task Manager",
+    "tagline": "Plan Today. A Brighter Tomorrow.",
+    "subline": "Move forward, one task at a time.",
+    "footer": "Get things done. Faster."
+  },
+  "nav": {
+    "home": "Home",
+    "calendar": "Calendar",
+    "focus": "Focus",
+    "stats": "Stats",
+    "settings": "Settings",
+    "newTask": "New task",
+    "main": "Main navigation"
+  },
+  "filter": {
+    "all": "All",
+    "today": "Today",
+    "upcoming": "Upcoming",
+    "completed": "Completed"
+  },
+  "greeting": {
+    "morning": "Good morning,",
+    "afternoon": "Good afternoon,",
+    "evening": "Good evening,"
+  },
+  "home": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "upcoming": "Upcoming",
+    "later": "Later",
+    "noDate": "No date",
+    "completed": "Completed",
+    "notifications": "Notifications",
+    "emptyTitle": "A clear day ahead",
+    "emptyBody": "Nothing planned yet. Say what's on your mind and Swift will sort it out.",
+    "emptyCta": "Add your first task by voice",
+    "emptyFilter": "Nothing here yet.",
+    "bellOverdue": "Overdue",
+    "bellNext": "Coming up today",
+    "bellEmpty": "You're all caught up."
+  },
+  "newTask": {
+    "title": "New Task",
+    "editTitle": "Edit",
+    "placeholder": "What do you want to do?",
+    "understand": "Understand",
+    "back": "Back"
+  },
+  "field": {
+    "date": "Date",
+    "time": "Time",
+    "category": "Category",
+    "priority": "Priority",
+    "notes": "Notes",
+    "notesPlaceholder": "Add a note...",
+    "type": "Type",
+    "none": "None",
+    "noTime": "No time",
+    "allDay": "All day",
+    "start": "Start",
+    "end": "End",
+    "duration": "Duration"
+  },
+  "priority": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High"
+  },
+  "type": {
+    "task": "Task",
+    "event": "Event"
+  },
+  "voice": {
+    "button": "Voice",
+    "listening": "Listening...",
+    "processing": "Understanding...",
+    "tapToStop": "Tap to stop",
+    "cancel": "Cancel",
+    "language": "Voice language",
+    "auto": "Auto",
+    "permissionTitle": "Microphone is blocked",
+    "permissionBody": "Allow microphone access for Swift. On iPhone: Settings → Safari → Microphone → Allow. On Android: tap the lock icon in the address bar → Permissions → Microphone.",
+    "unsupported": "Voice recording isn't supported in this browser.",
+    "offline": "Voice needs an internet connection.",
+    "nothingHeard": "I didn't catch a task there. Try again?",
+    "error": "Something went wrong while understanding. Your words are kept so you can edit them.",
+    "rateLimited": "Too many voice requests this hour. Try again a bit later.",
+    "confirmTitle": "Check before saving",
+    "createAll": "Create all",
+    "recordAgain": "Record again",
+    "remove": "Remove",
+    "transcript": "You said",
+    "created": "{count, plural, one {# item created} other {# items created}}"
+  },
+  "action": {
+    "create": "Create Task",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "changeDate": "Change date",
+    "makeEvent": "Make event",
+    "makeTask": "Make task",
+    "undo": "Undo",
+    "done": "Done",
+    "close": "Close",
+    "retry": "Retry",
+    "more": "More actions",
+    "complete": "Mark as done",
+    "reopen": "Mark as not done",
+    "clear": "Clear"
+  },
+  "state": {
+    "overdue": "Overdue",
+    "offline": "Offline",
+    "loading": "Loading...",
+    "deleted": "Deleted",
+    "completed": "Completed",
+    "saved": "Saved"
+  },
+  "sync": {
+    "synced": "Added to Calendar",
+    "failed": "Not sent to Calendar",
+    "pending": "Sending to Calendar...",
+    "retry": "Retry",
+    "reconnect": "Google Calendar disconnected. Reconnect",
+    "fromGoogle": "Google Calendar"
+  },
+  "confirmDelete": {
+    "title": "Delete this item?",
+    "body": "This can't be undone.",
+    "bodyEvent": "It will also be removed from Google Calendar."
+  },
+  "calendar": {
+    "openMonth": "Open month view",
+    "noItems": "Nothing planned for this day.",
+    "untimed": "Tasks",
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week",
+    "today": "Today"
+  },
+  "focus": {
+    "title": "Focus",
+    "pickTask": "Pick a task",
+    "freeFocus": "Free focus",
+    "start": "Start",
+    "pause": "Pause",
+    "resume": "Resume",
+    "reset": "Reset",
+    "focusPhase": "Focus",
+    "breakPhase": "Break",
+    "custom": "Custom",
+    "minutes": "min",
+    "finishedTitle": "Session complete",
+    "markDone": "Mark \"{title}\" as done?",
+    "keepGoing": "Not yet",
+    "todayMinutes": "Focused today"
+  },
+  "stats": {
+    "title": "Stats",
+    "completedToday": "Completed today",
+    "completedWeek": "This week",
+    "rate": "Completion rate",
+    "streak": "Current streak",
+    "streakDays": "{count, plural, one {# day} other {# days}}",
+    "focusWeek": "Focus this week",
+    "last7": "Last 7 days",
+    "byCategory": "By category",
+    "tasksVsEvents": "Tasks vs events",
+    "noCategory": "No category"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "name": "Name",
+    "uiLanguage": "App language",
+    "voiceLanguage": "Voice language",
+    "theme": "Theme",
+    "themeSystem": "System",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "google": "Google Calendar",
+    "googleConnect": "Connect Google Calendar",
+    "googleDisconnect": "Disconnect",
+    "googleConnected": "Connected as {email}",
+    "googleNotConnected": "Not connected. Events stay only in Swift.",
+    "targetCalendar": "Calendar for new events",
+    "eventDuration": "Default event length",
+    "timeFormat": "Time format",
+    "h24": "24-hour",
+    "h12": "12-hour",
+    "autoCreate": "Create without confirmation",
+    "autoCreateHint": "Voice items are saved right away, with a 5-second undo.",
+    "categories": "Categories",
+    "addCategory": "Add category",
+    "nameAz": "Name (Azerbaijani)",
+    "nameEn": "Name (English)",
+    "color": "Color",
+    "install": "Install Swift",
+    "installIos": "iPhone: open Swift in Safari, tap Share, then \"Add to Home Screen\".",
+    "installAndroid": "Android: open Swift in Chrome, tap ⋮, then \"Install app\".",
+    "export": "Export my data (JSON)",
+    "signOut": "Sign out",
+    "version": "Version {version}"
+  },
+  "auth": {
+    "signIn": "Continue with Google",
+    "welcome": "Welcome to Swift",
+    "privateTitle": "This app is private.",
+    "privateBody": "Swift is a personal app. This Google account doesn't have access.",
+    "tryAnother": "Use another account",
+    "error": "Sign-in didn't work. Please try again."
+  },
+  "error": {
+    "generic": "Something went wrong.",
+    "tryAgain": "Try again",
+    "offlineSave": "You're offline. Changes can't be saved right now."
+  }
+}
