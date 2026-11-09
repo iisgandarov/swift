@@ -13,10 +13,12 @@ export default defineConfig({
     viewport: { width: 390, height: 844 },
     hasTouch: true,
     trace: "off",
+    permissions: ["microphone"],
+    launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] },
   },
   projects: [
-    { name: "light", use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, colorScheme: "light" } },
-    { name: "dark", use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, colorScheme: "dark" } },
+    { name: "light", use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, colorScheme: "light", permissions: ["microphone"] } },
+    { name: "dark", use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, colorScheme: "dark", permissions: ["microphone"] } },
   ],
   webServer: {
     // demo mode: in-memory store, fake user, mocked AI/Calendar — no keys needed
