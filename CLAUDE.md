@@ -24,16 +24,17 @@ Swift is İsrafil's personal **voice-first task manager**, a PWA that should fee
 - **No hard-coded UI strings or colors.** Use `messages/*.json` and the CSS tokens (`btn-primary`, `sel`, `seg-on`, `fab`, `avatar`, `text-accent`).
 - **Navigation is client-side.** One `AppShell` renders every screen from the URL; use `navigate()` / `AppLink` from `src/lib/client/nav.ts`, not `<Link>` or `router.push`. Route files return `null`.
 - **Task vs event rules** live in `src/lib/domain/rules.ts`: a clock time means event, the default event length comes from Settings, and completing an item is app-only. Google sync never loses data; on failure it sets `sync_status = failed` and shows Retry.
+- **AI time budget:** Gemini calls must finish inside the 60 s route limit (50 s budget, 25 s per call, thinking set to the lowest level). Every failed call is logged with Google's exact message as `[gemini] call failed`.
 - **AI pipeline:** voice audio is converted to WAV on the device, and one Gemini call returns transcript + items. For text, tapping Create runs the AI first and opens the confirmation sheet. **Manual form choices always win.** Retry once, then a clear message that keeps the text.
 - **Don't touch the service worker or offline logic** unless asked; İsrafil says offline works.
 - **Design:** true dark mode (#000/#121212/#1C1C1E/#2C2C2E), a calm accent (#7BA4F0 in dark), no glows. The + button and avatar stay neutral. + opens the Voice task / Text task choice sheet. Use the names "Səsli tapşırıq / Voice task" and "Mətnli tapşırıq / Text task".
 - **Working style:** commit after each item, push to `claude/swift-v1`, give a short report. When guiding İsrafil through dashboards, go **one step at a time in simple Azerbaijani**.
 
-## Current status (as of `cdb5b25`, 2026-11-09)
-Milestones 1–7 and round-2 items 1, 3, 4, 5 and 6 are done (item 2, offline, was skipped on purpose). Sign-in works in production. The Gemini integration is **built and unit-tested with mocked responses but not yet verified live**. A signed-in check is available at `/api/ai/test`. The Claude Artifact side version is at https://claude.ai/artifact/1uRACCrcuksMGuvjFksPV6; it isn't in the repo.
+## Current status (2026-11-09, after the Gemini production fix)
+Milestones 1–7 and round-2 items 1, 3, 4, 5 and 6 are done (item 2, offline, was skipped on purpose). Sign-in works in production. Gemini failed in production ("Understanding…" then a generic error); fixed with a 50 s time budget, minimal thinking, and the model fallback chain `GEMINI_MODEL → gemini-3.1-flash-lite → gemini-flash-latest → gemini-2.5-flash` (his free model is **Gemini 3.1 Flash-Lite**). **Live result still to be confirmed** at `/api/ai/test`. The Claude Artifact side version is at https://claude.ai/artifact/1uRACCrcuksMGuvjFksPV6; it isn't in the repo.
 
 ## Open items
-1. In Vercel, set `AI_PROVIDER=gemini` and `GEMINI_MODEL=gemini-3.8-flash`, redeploy, then confirm with `/api/ai/test`. Pick a listed Flash model if this one is wrong.
+1. After the Vercel redeploy, open `/api/ai/test` while signed in and confirm `ok: true` (env: `AI_PROVIDER=gemini`, `GEMINI_MODEL=gemini-3.1-flash-lite`, `GEMINI_API_KEY`).
 2. In Vercel, set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` and `TOKEN_ENCRYPTION_KEY` for Calendar sync. Then publish the Google consent screen ("In production"), because Testing mode tokens expire after 7 days.
 3. Delete the old, exposed Google OAuth client secret. Consider making the repo private.
 4. Re-measure Lighthouse mobile performance (it was 87–95).

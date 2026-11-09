@@ -9,8 +9,8 @@ export class ApiError extends Error {
   }
 }
 
-export async function api<T>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
-  const { json, headers, ...rest } = init;
+export async function api<T>(path: string, init: RequestInit & { json?: unknown; timeoutMs?: number } = {}): Promise<T> {
+  const { json, headers, timeoutMs, ...rest } = init;
   let res: Response;
   try {
     res = await fetch(path, {
@@ -18,9 +18,11 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
       headers: json !== undefined ? { "content-type": "application/json", ...headers } : headers,
       body: json !== undefined ? JSON.stringify(json) : rest.body,
       credentials: "same-origin",
+      ...(timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
     });
-  } catch {
-    throw new ApiError(0, "network");
+  } catch (err) {
+    const name = err instanceof Error ? err.name : "";
+    throw new ApiError(0, name === "TimeoutError" || name === "AbortError" ? "timeout" : "network");
   }
   if (res.status === 401) {
     // session expired: full reload to the login page clears client state

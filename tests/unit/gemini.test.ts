@@ -65,7 +65,7 @@ describe("Gemini request", () => {
     const res = await parseAudioWithRetry(provider, { base64: "UklGRg==", mimeType: "audio/wav" }, ctx, "az", noSleep);
     expect(res.transcript).toBe("salam");
     const parts = (calls[0].body.contents as { parts: Record<string, unknown>[] }[])[0].parts;
-    expect(parts[0]).toEqual({ inlineData: { mimeType: "audio/wav", data: "UklGRg==" } });
+    expect(parts.find((p) => "inlineData" in p)).toEqual({ inlineData: { mimeType: "audio/wav", data: "UklGRg==" } });
     const schema = (calls[0].body.generationConfig as { responseJsonSchema: { required: string[] } }).responseJsonSchema;
     expect(schema.required).toContain("transcript");
     expect(JSON.stringify(calls[0].body.systemInstruction)).toContain("Azerbaijani");

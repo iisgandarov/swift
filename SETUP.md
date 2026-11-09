@@ -28,7 +28,7 @@ GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=
 AI_PROVIDER=gemini
 GEMINI_API_KEY=
-GEMINI_MODEL=gemini-3.8-flash
+GEMINI_MODEL=gemini-3.1-flash-lite
 TOKEN_ENCRYPTION_KEY=
 ALLOWED_EMAILS=isgandarov.israfil@gmail.com
 APP_URL=
@@ -157,7 +157,8 @@ Swift sends your voice note or typed sentence to Google Gemini, which writes it 
 1. Go to <https://aistudio.google.com/apikey> and sign in with your Gmail.
 2. Click **Create API key**. Choose your Google Cloud project if it asks (the same "Swift" / "My First Project" is fine).
 3. Copy the key (it starts with `AIza`) into your note as `GEMINI_API_KEY`.
-4. Leave `AI_PROVIDER=gemini` and `GEMINI_MODEL=gemini-3.8-flash`. If Google renames its Flash models later, put the current Flash model name from <https://ai.google.dev/gemini-api/docs/models> here.
+4. Leave `AI_PROVIDER=gemini` and `GEMINI_MODEL=gemini-3.1-flash-lite` (the free-tier model). If that model is ever unavailable, Swift tries `gemini-flash-latest` and then `gemini-2.5-flash` by itself.
+5. To check the setup after deploying, sign in and open `YOUR-APP/api/ai/test`. It shows whether the key is present, which model answered, and Google's exact error if something fails.
 
 The free tier is enough for personal use. If you ever hit its limit, Swift says so and keeps your text, and you can save it as typed.
 

@@ -101,7 +101,7 @@ export interface AudioInput {
 /** Normalised provider failure, so the retry logic and the UI can react per cause. */
 export class AiProviderError extends Error {
   constructor(
-    public code: "quota" | "network" | "upstream" | "config" | "blocked",
+    public code: "quota" | "network" | "upstream" | "config" | "blocked" | "timeout" | "model",
     message?: string,
   ) {
     super(message ?? code);
@@ -114,4 +114,6 @@ export interface AiProvider {
   parseItems(text: string, ctx: ParseContext, opts?: { retryHint?: string }): Promise<string>;
   /** Audio → raw JSON string matching parseResultSchema including `transcript`, in ONE call. */
   parseAudio(audio: AudioInput, ctx: ParseContext, opts?: { lang?: "az" | "en"; retryHint?: string }): Promise<string>;
+  /** ms left in this request's time budget (providers with a budget only) */
+  timeLeft?(): number;
 }

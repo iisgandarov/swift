@@ -105,7 +105,8 @@
     "transcript": "Dediyin",
     "created": "{count} element yaradıldı",
     "quota": "AI limiti bu dəqiqə üçün doldu. Bir az sonra yenidən cəhd et — mətnin saxlanıldı.",
-    "notConfigured": "Səsli və mətnli anlama hələ qurulmayıb (GEMINI_API_KEY). Tapşırığı formla əlavə edə bilərsən."
+    "notConfigured": "Səsli və mətnli anlama hələ qurulmayıb (GEMINI_API_KEY). Tapşırığı formla əlavə edə bilərsən.",
+    "timeout": "Cavab çox gecikdi. Bir az sonra yenidən cəhd et — mətnin saxlanıldı."
   },
   "action": {
     "create": "Tapşırıq yarat",

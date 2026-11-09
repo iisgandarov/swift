@@ -12,6 +12,8 @@ import { useOnline } from "@/hooks/use-online";
 import { useRecorder, type Recording } from "@/hooks/use-recorder";
 import { useToast } from "@/components/ui/toast";
 
+const CLIENT_TIMEOUT_MS = 65_000;
+
 export type VoiceLang = "auto" | "az" | "en";
 type FlowState = "idle" | "processing" | "review";
 
@@ -60,14 +62,17 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
     async (err: unknown, transcript?: string) => {
       setState("idle");
       if (transcript) onFallbackText(transcript);
-      const code = err instanceof ApiError ? err.code : "";
+      // a 504 from the platform means the server ran out of time before answering
+      const code = err instanceof ApiError ? (err.status === 504 ? "timeout" : err.code) : "";
       toast({
         message:
           code === "rate_limited"
             ? t("rateLimited")
             : code === "ai_quota"
               ? t("quota")
-              : code === "ai_not_configured"
+              : code === "ai_timeout" || code === "timeout"
+                ? t("timeout")
+                : code === "ai_not_configured"
                 ? t("notConfigured")
                 : code === "network"
                   ? t("offline")
@@ -98,13 +103,15 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
       form.append("lang", lang);
       form.append("duration", String(Math.round(r.durationMs)));
       try {
-        const res = await fetch("/api/voice", { method: "POST", body: form, credentials: "same-origin" });
+        // the server gives up after ~50 s; don't leave "Understanding..." spinning longer than that
+        const res = await fetch("/api/voice", { method: "POST", body: form, credentials: "same-origin", signal: AbortSignal.timeout(CLIENT_TIMEOUT_MS) });
         const body = (await res.json().catch(() => ({}))) as Partial<ParseResponse> & { error?: string };
         if (!res.ok) throw Object.assign(new ApiError(res.status, body.error ?? "server_error"), { transcript: body.transcript });
         handle(body as ParseResponse, "voice");
       } catch (err) {
         const transcript = (err as { transcript?: string }).transcript;
-        fail(err instanceof TypeError ? new ApiError(0, "network") : err, transcript);
+        const name = err instanceof Error ? err.name : "";
+        fail(name === "TimeoutError" || name === "AbortError" ? new ApiError(0, "timeout") : err instanceof TypeError ? new ApiError(0, "network") : err, transcript);
       }
     },
     [lang, handle, fail],
@@ -130,7 +137,7 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
       }
       setState("processing");
       try {
-        return handle(await api<ParseResponse>("/api/parse", { method: "POST", json: { text } }), "text", transform);
+        return handle(await api<ParseResponse>("/api/parse", { method: "POST", json: { text }, timeoutMs: CLIENT_TIMEOUT_MS }), "text", transform);
       } catch (err) {
         fail(err, text);
         return false;

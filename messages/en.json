@@ -105,7 +105,8 @@
     "transcript": "You said",
     "created": "{count, plural, one {# item created} other {# items created}}",
     "quota": "The AI limit is reached for now. Try again in a bit — your text is kept.",
-    "notConfigured": "Voice and text understanding isn't set up yet (GEMINI_API_KEY). You can still add the task with the form."
+    "notConfigured": "Voice and text understanding isn't set up yet (GEMINI_API_KEY). You can still add the task with the form.",
+    "timeout": "The answer took too long. Try again in a moment — your text is kept."
   },
   "action": {
     "create": "Create Task",

@@ -6,6 +6,7 @@ import { buildParseContext } from "@/lib/ai/context";
 import { AiParseError, parseWithRetry } from "@/lib/ai/parse";
 import { AiProviderError } from "@/lib/ai/schema";
 
+// Gemini calls are capped at 50 s in total (see GeminiProvider), safely inside this limit.
 export const maxDuration = 60;
 const bodySchema = z.object({ text: z.string().trim().min(1).max(2000) });
 
@@ -17,7 +18,7 @@ export const POST = withAuth(async (ctx, req) => {
     const result = await parseWithRetry(getAiProvider(), text, await buildParseContext(ctx));
     return json({ ...result, transcript: text });
   } catch (err) {
-    if (err instanceof AiParseError) return json({ error: err.code, transcript: text }, err.code === "ai_quota" ? 429 : 502);
+    if (err instanceof AiParseError) return json({ error: err.code, transcript: text }, err.code === "ai_quota" ? 429 : err.code === "ai_timeout" ? 504 : 502);
     if (err instanceof AiProviderError) return json({ error: "ai_not_configured", transcript: text }, 503);
     throw err;
   }

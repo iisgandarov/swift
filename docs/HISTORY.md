@@ -189,6 +189,27 @@ He sent six items and asked for "commit after each, push at the end, short repor
 
 ---
 
+## Phase 6 — Gemini fails in production (2026-11-09 night)
+
+**Reported:** "Gemini fails for BOTH voice task and text task. After a long 'Understanding...' the app shows 'Something went wrong while understanding' / 'Couldn't understand that'." Env in Vercel: `AI_PROVIDER=gemini`, `GEMINI_API_KEY` (new AI Studio key), `GEMINI_MODEL=gemini-3.8-flash`. He asked to check the model name with fallback, timeouts and thinking, key/env reading, the request format (webm/opus from Android), and to improve `/api/ai/test` and the server logs. Mid-way: ***"my free model is Gemini 3.1 Flash-Lite, not 3.8. I set GEMINI_MODEL=gemini-3.1-flash-lite in Vercel. Put it first in the fallback chain and keep thinking minimal."***
+
+**Cause (from the code; live logs weren't visible to us):**
+- Each Gemini call had a **45 s** timeout, and a failure was retried once. A slow request could therefore need about **90 s+**, but the Vercel route is capped at **60 s**.
+- Newer Gemini models "think" by default, and our prompt is long, so calls were slow.
+- When Vercel killed the function, the browser got a non-JSON 504. The app mapped that to the generic "Something went wrong" after a long spinner.
+- On top of that, `gemini-3.8-flash` is not his free-tier model. A 404, or a 429 "limit: 0", would also have failed every call.
+
+**Fixed:**
+- **Time budget:** 50 s in total and 25 s per Google call; a retry happens only if ≥ 10 s remain. Routes keep `maxDuration = 60`. The client gives up after 65 s with a clear "took too long" message, and a platform 504 is shown as a timeout.
+- **Thinking set to the lowest level** per model: Gemini 3.x / `-latest` → `thinkingLevel: "minimal"`; 2.5 Flash → `thinkingBudget: 0`. If a model rejects the setting, it's dropped automatically. A rejected `responseJsonSchema` falls back to plain JSON mode, with zod still validating.
+- **Model fallback:** `GEMINI_MODEL → gemini-3.1-flash-lite → gemini-flash-latest → gemini-2.5-flash`. Default `gemini-3.1-flash-lite`. It moves on for 404, model-permission 403, "not supported" 400, and 429 "limit: 0". An ordinary rate limit stays a quota error. The model used is logged, and a retry stays on that model.
+- **Audio:** Android `audio/webm;codecs=opus` is normalised to `audio/webm` if the on-device WAV conversion fails; WAV stays the normal path. Endpoint: AI Studio `generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`, key in the `x-goog-api-key` header.
+- **Logs:** every failed Google call is written to Vercel Runtime Logs as `[gemini] call failed {model, status, ms, error, thinking, schema}`, with Google's exact message and never the key.
+- **`/api/ai/test`** now shows: env present yes/no, the key's first 4 characters, the model order, the model used and whether a fallback was used, HTTP status, Google's exact error, every attempt, latency in ms, and the parsed result for "Axşama görüş olacaq onu qeyd et Dostlarla görüş saat 20.30da". On failure it also lists the Flash models his key can use.
+- Tests: 103 unit tests, including fallback, thinking, schema, timeout and mime cases.
+
+---
+
 ## Rejected or replaced options (summary)
 
 | Option | Outcome | Why |
@@ -207,7 +228,7 @@ He sent six items and asked for "commit after each, push at the end, short repor
 
 ## Open items (as of `cdb5b25`)
 
-1. **Vercel env vars for Gemini:** `AI_PROVIDER=gemini` and `GEMINI_MODEL=gemini-3.8-flash` (`GEMINI_API_KEY` is already there). Redeploy, then open `/api/ai/test` while signed in. If the model name is wrong, use one from `available_flash_models`.
+1. **Confirm Gemini live:** after the redeploy, open `/api/ai/test` while signed in. It should show `ok: true` and `model_used: gemini-3.1-flash-lite`. If not, `google_error` and the Runtime Logs (`[gemini] call failed`) show why.
 2. **Google Calendar sync:** add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` (`https://swift-sand-pi.vercel.app/api/google/callback`) and `TOKEN_ENCRYPTION_KEY` in Vercel, then **Publish app** in Google Auth Platform → Audience (otherwise tokens expire after 7 days). Not yet confirmed done.
 3. **Delete the old (exposed) Google OAuth client secret** in Google Cloud → Clients → Web client 1, if not done yet.
 4. The GitHub repo is **public**; make it private if wanted.
