@@ -47,6 +47,8 @@ export function ItemRow(props: ItemRowProps) {
     showDate: props.showDate,
     allDayLabel: t("field.allDay"),
   });
+  // meta row (time · overdue · sync · category) only when it has data, so the card follows its content
+  const hasMeta = Boolean(when || overdue || item.type === "event" || category);
 
   return (
     <li className="relative overflow-hidden" data-testid="item-row" data-title={item.title}>
@@ -73,7 +75,7 @@ export function ItemRow(props: ItemRowProps) {
           else if (info.offset.x < -SWIPE) onDelete(item);
           setTimeout(() => (dragged.current = false), 50);
         }}
-        className="relative flex min-h-[76px] cursor-pointer items-center gap-4 bg-surface py-3 pr-2 pl-4"
+        className="relative flex cursor-pointer items-center gap-4 bg-surface py-3.5 pr-2 pl-4"
         onClick={() => {
           if (!dragged.current) navigate(`/edit/${item.id}`);
         }}
@@ -81,11 +83,16 @@ export function ItemRow(props: ItemRowProps) {
         <CheckboxCircle checked={done} onChange={() => onToggle(item)} label={done ? t("action.reopen") : t("action.complete")} />
 
         <div className="min-w-0 flex-1">
-          <p className={cn("line-clamp-2 text-[16px] font-medium leading-snug", done && "text-muted line-through decoration-muted/70")}>
+          <p
+            title={item.title}
+            className={cn("line-clamp-2 text-[16px] font-medium leading-snug break-words", done && "text-muted line-through decoration-muted/70")}
+          >
             {item.title}
           </p>
-          <div className="mt-1 flex items-center justify-between gap-2">
-            <div className="flex min-h-6 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted">
+          {hasMeta && (
+          <div className="mt-1.5 flex items-center justify-between gap-2">
+            {(when || overdue || item.type === "event") && (
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-5 text-muted">
               {(when || overdue) && (
                 <span className="flex items-center gap-1.5 tabular-nums">
                   <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: PRIORITY_DOT[item.priority] }} />
@@ -97,8 +104,10 @@ export function ItemRow(props: ItemRowProps) {
               )}
               {item.type === "event" && <SyncBadge item={item} onRetry={() => onRetrySync(item)} />}
             </div>
+            )}
             {category && <CategoryChip category={category} locale={locale} className="shrink-0" />}
           </div>
+          )}
         </div>
 
         <button
@@ -108,7 +117,7 @@ export function ItemRow(props: ItemRowProps) {
             e.stopPropagation();
             onMenu(item);
           }}
-          className="chrome flex size-11 shrink-0 items-center justify-center rounded-full text-muted hover:bg-surface-2"
+          className="chrome -my-2 flex size-11 shrink-0 items-center justify-center rounded-full text-muted hover:bg-surface-2"
         >
           <EllipsisVertical className="size-5" aria-hidden />
         </button>
