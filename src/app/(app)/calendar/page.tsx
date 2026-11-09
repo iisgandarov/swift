@@ -1,13 +1,5 @@
-import { useTranslations } from "next-intl";
-import { PageTitle } from "@/components/ui/page-title";
-import { ListSkeleton } from "@/components/ui/skeleton";
+import { CalendarScreen } from "@/components/calendar/calendar-screen";
 
-export default function Page() {
-  const t = useTranslations("nav");
-  return (
-    <>
-      <PageTitle>{t("calendar")}</PageTitle>
-      <ListSkeleton rows={3} />
-    </>
-  );
+export default function CalendarPage() {
+  return <CalendarScreen />;
 }

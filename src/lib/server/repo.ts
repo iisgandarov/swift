@@ -8,6 +8,8 @@ export interface ItemQuery {
   /** Inclusive local date range; when absent the "working set" is returned. */
   from?: string;
   to?: string;
+  /** every item, for export */
+  all?: boolean;
 }
 
 /**

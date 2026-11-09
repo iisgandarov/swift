@@ -1,8 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Category, GoogleStatus, Item, Profile } from "@/lib/domain/types";
-import type { CategoryInput, ItemInput, ItemPatch, ProfilePatch } from "@/lib/domain/schemas";
+import type { Category, FocusSession, GoogleStatus, Item, Profile } from "@/lib/domain/types";
+import type { CategoryInput, FocusSessionInput, ItemInput, ItemPatch, ProfilePatch } from "@/lib/domain/schemas";
 import { api } from "./api";
 
 export interface Bootstrap {
@@ -235,4 +235,30 @@ export function useGoogleMutations() {
       onSuccess: setStatus,
     }),
   };
+}
+
+/** Items whose local date is within [from, to] (any status). */
+export function useRangeItems(from: string, to: string) {
+  return useQuery({
+    queryKey: qk.range(from, to),
+    queryFn: async () => (await api<{ items: Item[] }>(`/api/items?from=${from}&to=${to}`)).items,
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useFocusSessions() {
+  return useQuery({
+    queryKey: qk.focus,
+    queryFn: async () => (await api<{ sessions: FocusSession[] }>("/api/focus")).sessions,
+    staleTime: 60_000,
+  });
+}
+
+export function useLogFocus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: FocusSessionInput) => api("/api/focus", { method: "POST", json: input }),
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.focus }),
+  });
 }

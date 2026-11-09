@@ -53,7 +53,7 @@ export function Sidebar() {
       </nav>
 
       <div className="mt-auto px-2 text-xs leading-relaxed text-subtle">
-        <p className="font-semibold text-primary dark:text-secondary">{t("app.tagline")}</p>
+        <p lang="en" className="font-semibold text-primary dark:text-secondary">{t("app.tagline")}</p>
         <p className="mt-1">{t("app.subline")}</p>
       </div>
     </aside>

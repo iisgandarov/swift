@@ -84,13 +84,15 @@ export class SupabaseRepo implements Repo {
 
   async listItems(q: ItemQuery = {}) {
     let query = this.db.from("items").select("*").eq("user_id", this.userId);
-    if (q.from && q.to) {
+    if (q.all) {
+      // no filter
+    } else if (q.from && q.to) {
       query = query.gte("date", q.from).lte("date", q.to);
     } else {
       const since = addDays(todayLocal(), -DONE_WINDOW_DAYS);
       query = query.or(`status.eq.open,completed_at.gte.${since}`);
     }
-    return must(await query.order("date", { nullsFirst: false }).order("start_at").limit(2000), "items") as Item[];
+    return must(await query.order("date", { nullsFirst: false }).order("start_at").limit(q.all ? 20000 : 2000), "items") as Item[];
   }
 
   async getItem(id: string) {

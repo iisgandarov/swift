@@ -7,6 +7,7 @@ import { Sidebar } from "./sidebar";
 import { Fab } from "./fab";
 import { OfflinePill } from "./offline-pill";
 import { ReconnectBanner } from "./reconnect-banner";
+import { ProfileSync } from "./profile-sync";
 
 const FAB_ROUTES = new Set(["/", "/calendar"]);
 const FULLSCREEN_ROUTES = ["/new", "/edit"];
@@ -31,6 +32,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+      <ProfileSync />
       <OfflinePill />
       {!fullscreen && <BottomNav />}
       {FAB_ROUTES.has(pathname) && <Fab />}
