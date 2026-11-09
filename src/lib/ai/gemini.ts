@@ -86,3 +86,13 @@ export class GeminiProvider implements AiProvider {
     return text;
   }
 }
+
+/** Models this key can call with generateContent (diagnostics only). */
+export async function listGeminiModels(apiKey: string = env.geminiKey): Promise<string[]> {
+  const res = await fetch(`${ENDPOINT}?pageSize=200`, { headers: { "x-goog-api-key": apiKey }, signal: AbortSignal.timeout(15_000) });
+  if (!res.ok) return [];
+  const data = (await res.json()) as { models?: { name: string; supportedGenerationMethods?: string[] }[] };
+  return (data.models ?? [])
+    .filter((m) => m.supportedGenerationMethods?.includes("generateContent"))
+    .map((m) => m.name.replace(/^models\//, ""));
+}
