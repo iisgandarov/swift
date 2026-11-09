@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     if (env.supabaseServiceKey) {
       await createSupabaseAdmin().auth.admin.deleteUser(data.user.id).catch(() => undefined);
     }
-    return NextResponse.redirect(`${origin}/private`);
+    return NextResponse.redirect(`${origin}/private?email=${encodeURIComponent(data.user.email ?? "")}`);
   }
 
   const ctx = await getAppContext();

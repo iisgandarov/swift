@@ -21,7 +21,7 @@ function allowedEmails() {
  */
 export async function proxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) return NextResponse.next();
 
   let response = NextResponse.next({ request });
@@ -55,7 +55,7 @@ export async function proxy(request: NextRequest) {
     if (isApi) return NextResponse.json({ error: "forbidden" }, { status: 403 });
     const priv = request.nextUrl.clone();
     priv.pathname = "/private";
-    priv.search = "";
+    priv.search = email ? `?email=${encodeURIComponent(email)}` : "";
     return NextResponse.redirect(priv);
   }
   return response;
