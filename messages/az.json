@@ -62,7 +62,8 @@
     "allDay": "Bütün gün",
     "start": "Başlama",
     "end": "Bitmə",
-    "duration": "Müddət"
+    "duration": "Müddət",
+    "hours": "saat"
   },
   "priority": {
     "low": "Aşağı",

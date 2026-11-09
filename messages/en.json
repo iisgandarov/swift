@@ -62,7 +62,8 @@
     "allDay": "All day",
     "start": "Start",
     "end": "End",
-    "duration": "Duration"
+    "duration": "Duration",
+    "hours": "h"
   },
   "priority": {
     "low": "Low",
