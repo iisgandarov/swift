@@ -29,6 +29,7 @@ export function ConfirmSheet({
   onCreate,
   onRecordAgain,
   onClose,
+  againLabel,
 }: {
   open: boolean;
   drafts: Draft[];
@@ -38,6 +39,8 @@ export function ConfirmSheet({
   onCreate: () => void;
   onRecordAgain: () => void;
   onClose: () => void;
+  /** label for the "again" button (default: Record again) */
+  againLabel?: string;
 }) {
   const t = useTranslations();
   const { locale, today, timeFormat, defaultEventMinutes } = useAppSettings();
@@ -60,7 +63,7 @@ export function ConfirmSheet({
           <div className="flex gap-3">
             <Button variant="secondary" onClick={onRecordAgain} className="shrink-0" data-testid="record-again">
               <RotateCcw className="size-4" aria-hidden />
-              {t("voice.recordAgain")}
+              {againLabel ?? t("voice.recordAgain")}
             </Button>
             <Button className="flex-1" onClick={onCreate} disabled={!allValid || busy} data-testid="create-all">
               {drafts.length > 1 ? t("voice.createAll") : t("action.create")}

@@ -5,10 +5,11 @@ import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 import { tick } from "@/lib/haptics";
 import { navigate } from "@/lib/client/nav";
+import { openAddChoice } from "./add-choice";
 
 const LONG_PRESS_MS = 450;
 
-/** Floating + button: tap → New Task, long-press → New Task with voice recording started. */
+/** Floating + button: tap → choose voice or text task, long-press → start a voice task right away. */
 export function Fab() {
   const t = useTranslations("nav");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -40,7 +41,7 @@ export function Fab() {
       onPointerCancel={clear}
       onClick={() => {
         if (longPressed.current) return;
-        navigate("/new/text");
+        openAddChoice();
       }}
     >
       <Plus className="size-7" strokeWidth={2} aria-hidden />

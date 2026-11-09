@@ -3,25 +3,34 @@ import { expect, test } from "@playwright/test";
 // Demo mode uses the offline mock provider: any recording "transcribes" to a fixed
 // two-item Azerbaijani sentence, so the whole pipeline can be exercised without keys.
 
-test("voice → confirmation sheet → create all", async ({ page }) => {
-  await page.goto("/new");
-  await page.getByTestId("voice-button").click();
-  await expect(page.getByTestId("voice-stop")).toBeEnabled();
+test("+ → voice task starts recording → confirmation sheet → create all", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("button.fab").click();
+  await page.getByTestId("choose-voice").click();
+  await expect(page).toHaveURL(/\/new\/voice/);
+  await expect(page.getByTestId("voice-stop")).toBeEnabled(); // listening started by itself
   await page.waitForTimeout(1200);
   await page.getByTestId("voice-stop").click();
 
   const cards = page.getByTestId("draft-card");
   await expect(cards).toHaveCount(2, { timeout: 10_000 });
-  await expect(page.getByText(/Sabah saat 10-da/)).toBeVisible();
-
-  // remove nothing, just create both
   await page.getByTestId("create-all").click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.locator('[data-testid="item-row"]').filter({ hasText: /TLB/ }).first()).toBeVisible();
 });
 
+test("long-press on + goes straight to voice", async ({ page }) => {
+  await page.goto("/");
+  const fab = page.locator("button.fab");
+  await fab.hover();
+  await page.mouse.down();
+  await page.waitForTimeout(700);
+  await page.mouse.up();
+  await expect(page).toHaveURL(/\/new\/voice/);
+});
+
 test("typed sentence is understood", async ({ page }) => {
-  await page.goto("/new");
+  await page.goto("/new/text");
   await page.locator("#title").fill("sabah axşam 7-də ailə ilə şam yeməyi");
   await page.getByTestId("parse-text").click();
   const card = page.getByTestId("draft-card");

@@ -47,7 +47,14 @@
     "editTitle": "Redaktə",
     "placeholder": "Nə etmək istəyirsən?",
     "understand": "Anla",
-    "back": "Geri"
+    "back": "Geri",
+    "voiceTitle": "Səsli tapşırıq",
+    "textTitle": "Mətnli tapşırıq",
+    "chooseTitle": "Necə əlavə edək?",
+    "voiceHint": "Danış — tarixi, vaxtı və kateqoriyanı Swift özü doldursun",
+    "textHint": "Yaz və ya formu doldur",
+    "tapToSpeak": "Danışmaq üçün toxun",
+    "editAsText": "Mətn kimi redaktə et"
   },
   "field": {
     "date": "Tarix",
@@ -75,7 +82,7 @@
     "event": "Tədbir"
   },
   "voice": {
-    "button": "Səsli versiya",
+    "button": "Səsli tapşırıq",
     "listening": "Dinləyirəm...",
     "processing": "Anlayıram...",
     "tapToStop": "Dayandırmaq üçün toxun",
@@ -85,7 +92,7 @@
     "permissionTitle": "Mikrofon bağlıdır",
     "permissionBody": "Swift üçün mikrofona icazə ver. iPhone: Ayarlar → Safari → Mikrofon → İcazə ver. Android: ünvan sətrindəki kilid ikonuna toxun → İcazələr → Mikrofon.",
     "unsupported": "Bu brauzer səs yazmağı dəstəkləmir.",
-    "offline": "Səsli versiya üçün internet lazımdır.",
+    "offline": "Səsli tapşırıq üçün internet lazımdır.",
     "nothingHeard": "Tapşırıq eşitmədim. Yenidən cəhd edək?",
     "error": "Anlayarkən xəta baş verdi. Sözlərin saxlanıldı, redaktə edə bilərsən.",
     "rateLimited": "Bu saat üçün səs limiti doldu. Bir az sonra yenidən cəhd et.",

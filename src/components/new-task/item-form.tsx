@@ -59,6 +59,7 @@ export function ItemForm({
   voiceSlot,
   titleSlot,
   onTitleChange,
+  heading,
 }: {
   item?: Item;
   initial: FormState;
@@ -67,6 +68,8 @@ export function ItemForm({
   voiceSlot?: (api: { setForm: (f: Partial<FormState>) => void; form: FormState }) => ReactNode;
   titleSlot?: (api: { setForm: (f: Partial<FormState>) => void; form: FormState }) => ReactNode;
   onTitleChange?: (title: string) => void;
+  /** screen title for a new item (default "New Task") */
+  heading?: string;
 }) {
   const t = useTranslations();
   const toast = useToast();
@@ -142,7 +145,7 @@ export function ItemForm({
         <button type="button" onClick={close} aria-label={t("newTask.back")} className="-ml-2 flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
           <ArrowLeft className="size-6" aria-hidden />
         </button>
-        <h1 className="text-center text-xl font-bold">{item ? t("newTask.editTitle") : t("newTask.title")}</h1>
+        <h1 className="text-center text-xl font-bold">{item ? t("newTask.editTitle") : (heading ?? t("newTask.title"))}</h1>
       </header>
 
       <div className="relative">

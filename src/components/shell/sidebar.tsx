@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { AppLink as Link } from "./app-link";
+import { openAddChoice } from "./add-choice";
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 import { NAV_ITEMS } from "@/lib/nav";
@@ -20,13 +21,14 @@ export function Sidebar({ active: activeTab }: { active: TabKey | null }) {
         </div>
       </Link>
 
-      <Link
-        href="/new/text"
+      <button
+        type="button"
+        onClick={openAddChoice}
         className="btn-primary mb-6 flex h-12 items-center justify-center gap-2 rounded-full font-semibold transition-transform duration-200 active:scale-[0.98]"
       >
         <Plus className="size-5" aria-hidden />
         {t("nav.newTask")}
-      </Link>
+      </button>
 
       <nav aria-label={t("nav.main")}>
         <ul className="space-y-1">

@@ -21,8 +21,8 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icons/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     shortcuts: [
-      { name: "New task", short_name: "New", url: "/new", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
-      { name: "Voice task", short_name: "Voice", url: "/new?voice=1", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+      { name: "Text task", short_name: "Text", url: "/new/text", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+      { name: "Voice task", short_name: "Voice", url: "/new/voice", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
     ],
   };
 }

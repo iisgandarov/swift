@@ -14,7 +14,10 @@ describe("messages", () => {
   it("uses the brief's labels", () => {
     expect(az.nav.settings).toBe("Parametrlər");
     expect(az.filter.upcoming).toBe("Yaxın tarix");
-    expect(az.voice.button).toBe("Səsli versiya");
+    expect(az.voice.button).toBe("Səsli tapşırıq");
+    expect(en.voice.button).toBe("Voice task");
+    expect(az.newTask.textTitle).toBe("Mətnli tapşırıq");
+    expect(en.newTask.textTitle).toBe("Text task");
     expect(en.action.create).toBe("Create Task");
   });
 });

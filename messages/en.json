@@ -47,7 +47,14 @@
     "editTitle": "Edit",
     "placeholder": "What do you want to do?",
     "understand": "Understand",
-    "back": "Back"
+    "back": "Back",
+    "voiceTitle": "Voice task",
+    "textTitle": "Text task",
+    "chooseTitle": "How do you want to add it?",
+    "voiceHint": "Speak — Swift fills in the date, time and category",
+    "textHint": "Type it or fill in the form",
+    "tapToSpeak": "Tap to speak",
+    "editAsText": "Edit as text"
   },
   "field": {
     "date": "Date",
@@ -75,7 +82,7 @@
     "event": "Event"
   },
   "voice": {
-    "button": "Voice",
+    "button": "Voice task",
     "listening": "Listening...",
     "processing": "Understanding...",
     "tapToStop": "Tap to stop",

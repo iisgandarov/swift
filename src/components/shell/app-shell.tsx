@@ -9,7 +9,8 @@ import { CalendarScreen } from "@/components/calendar/calendar-screen";
 import { FocusLoader } from "@/components/focus/focus-loader";
 import { StatsScreen } from "@/components/stats/stats-screen";
 import { SettingsScreen } from "@/components/settings/settings-screen";
-import { NewTaskScreen } from "@/components/new-task/new-task-screen";
+import { VoiceTaskScreen } from "@/components/new-task/voice-task-screen";
+import { TextTaskScreen } from "@/components/new-task/text-task-screen";
 import { EditScreen } from "@/components/new-task/edit-screen";
 import { BottomNav } from "./bottom-nav";
 import { Sidebar } from "./sidebar";
@@ -17,6 +18,7 @@ import { Fab } from "./fab";
 import { OfflinePill } from "./offline-pill";
 import { ReconnectBanner } from "./reconnect-banner";
 import { ProfileSync } from "./profile-sync";
+import { AddChoiceSheet } from "./add-choice";
 
 const TAB_SCREENS: Record<TabKey, () => ReactNode> = {
   home: () => <HomeScreen aside={<DesktopCalendarPanel />} />,
@@ -81,7 +83,7 @@ export function AppShell(_props: { children?: ReactNode }) {
           ))}
           {screen.kind === "new" && (
             <section data-screen={pathname} key={`new-${screen.mode}`}>
-              <NewTaskScreen startVoice={screen.mode === "voice"} />
+              {screen.mode === "voice" ? <VoiceTaskScreen /> : <TextTaskScreen />}
             </section>
           )}
           {screen.kind === "edit" && (
@@ -93,6 +95,7 @@ export function AppShell(_props: { children?: ReactNode }) {
       </div>
       <ProfileSync />
       <OfflinePill />
+      <AddChoiceSheet />
       {!fullscreen && <BottomNav active={activeTab} />}
       {(activeTab === "home" || activeTab === "calendar") && <Fab />}
     </div>

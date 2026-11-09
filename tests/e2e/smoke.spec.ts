@@ -10,8 +10,10 @@ test("create a task by text and complete it", async ({ page }, info) => {
   const isDark = await page.evaluate(() => document.documentElement.classList.contains("dark"));
   expect(isDark).toBe(info.project.name === "dark");
 
-  await page.getByRole("button", { name: /new task|yeni tapşırıq/i }).click();
-  await expect(page).toHaveURL(/\/new/);
+  // "+" opens a choice: voice task or text task
+  await page.locator("button.fab").click();
+  await page.getByTestId("choose-text").click();
+  await expect(page).toHaveURL(/\/new\/text/);
   await page.locator("#title").fill(title);
   await page.getByTestId("create-item").click();
 

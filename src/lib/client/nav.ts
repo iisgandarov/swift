@@ -33,7 +33,7 @@ export function goBack(fallback = "/") {
 /** Path → which screen of the shell it shows. */
 export type Screen =
   | { kind: "tab"; tab: TabKey }
-  | { kind: "new"; mode: "choice" | "text" | "voice" }
+  | { kind: "new"; mode: "text" | "voice" }
   | { kind: "edit"; id: string; makeEvent: boolean };
 
 export const TABS = ["home", "calendar", "focus", "stats", "settings"] as const;
