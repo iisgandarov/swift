@@ -79,3 +79,36 @@ test("text: if the AI fails, the instant draft stays and can be saved", async ({
   await expect(page).toHaveURL(/\/$/);
   await expect(page.locator('[data-testid="item-row"]').filter({ hasText: /Ramiz/ }).first()).toBeVisible();
 });
+
+test("a task keeps its time; switching Task ↔ Event keeps date and time", async ({ page }) => {
+  await page.goto("/new/text");
+  await page.locator("#title").fill("sabah saat 5-də dərman iç");
+  await page.getByTestId("create-item").click();
+  const card = page.getByTestId("draft-card");
+  await expect(card).toHaveCount(1, { timeout: 10_000 });
+  await expect(page.getByTestId("create-all")).toBeEnabled({ timeout: 10_000 });
+  await expect(card.getByRole("radio", { name: /Tapşırıq|Task/ })).toHaveAttribute("aria-checked", "true");
+  await expect(card.getByText("17:00", { exact: true })).toBeVisible();
+
+  await card.getByRole("radio", { name: /Tədbir|Event/ }).click();
+  await expect(card.getByText("17:00 – 18:00")).toBeVisible();
+  await card.getByRole("radio", { name: /Tapşırıq|Task/ }).click();
+  await expect(card.getByText("17:00", { exact: true })).toBeVisible();
+
+  await page.getByTestId("create-all").click();
+  await expect(page).toHaveURL(/\/$/);
+  const row = page.locator('[data-testid="item-row"]').filter({ hasText: /Dərman/ }).first();
+  await expect(row).toContainText("17:00");
+});
+
+test("voice: Task chosen while speaking makes every item a task, keeping the time", async ({ page }) => {
+  await page.goto("/new/voice");
+  await expect(page.getByTestId("voice-stop")).toBeEnabled();
+  await page.getByRole("dialog").getByRole("radio", { name: /^(Tapşırıq|Task)$/ }).click();
+  await page.waitForTimeout(800);
+  await page.getByTestId("voice-stop").click();
+  const cards = page.getByTestId("draft-card");
+  await expect(cards).toHaveCount(2, { timeout: 10_000 });
+  for (const c of await cards.all()) await expect(c.getByRole("radio", { name: /Tapşırıq|Task/ })).toHaveAttribute("aria-checked", "true");
+  await expect(cards.first().getByText("10:00", { exact: true })).toBeVisible();
+});

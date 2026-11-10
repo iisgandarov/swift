@@ -40,7 +40,8 @@ export function TextTaskScreen() {
         onBeforeSubmit={async (form, touched) => {
           const text = form.title.trim();
           if (!flow.online || saveAsTypedFor === text) return false; // save as typed
-          const opened = await flow.parseText(text, (d) => applyManualChoices(d, { ...form, touched }));
+          // a type picked by hand is sent to the AI too, so it returns that type for every item
+          const opened = await flow.parseText(text, (d) => applyManualChoices(d, { ...form, touched }), touched.has("type") ? form.type : undefined);
           if (!opened) {
             setSaveAsTypedFor(text);
             toast({ message: t("newTask.saveAsTyped"), duration: 6000 });

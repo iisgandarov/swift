@@ -131,10 +131,13 @@ export function ConfirmSheet({
                     role="radio"
                     aria-checked={d.type === ty}
                     onClick={() => {
+                      // switching keeps the date and time; an event without a time asks for one
                       if (ty === "event" && !d.start) {
                         update(d.key, { type: "event", date: d.date ?? today });
                         setPicker({ kind: "time", key: d.key });
-                      } else update(d.key, { type: ty });
+                      } else if (ty === "event") {
+                        update(d.key, { type: "event", end: d.end ?? addMinutesToTime(d.start!, defaultEventMinutes).time });
+                      } else update(d.key, { type: "task", end: null });
                     }}
                     className={cn("h-8 rounded-full px-4 text-[13px] font-semibold", d.type === ty ? "sel" : "text-muted")}
                   >
@@ -154,7 +157,7 @@ export function ConfirmSheet({
                   icon={<Clock3 className="size-4" />}
                   warn={d.uncertain.includes("time") || (d.type === "event" && !d.start)}
                   onClick={() => setPicker({ kind: "time", key: d.key })}
-                  label={d.type === "event" && d.start ? formatTimeRange(d.start, d.end, locale, timeFormat) : t("field.noTime")}
+                  label={d.start ? formatTimeRange(d.start, d.type === "event" ? d.end : null, locale, timeFormat) : t("field.noTime")}
                 />
                 <Pill
                   icon={
@@ -205,13 +208,15 @@ export function ConfirmSheet({
         onClose={() => setPicker(null)}
         value={{ start: active?.start ?? null, end: active?.end ?? null }}
         defaultMinutes={defaultEventMinutes}
+        single={active?.type === "task"}
         onChange={({ start, end }) =>
           active &&
           update(
             active.key,
+            // the time no longer decides the type: a task keeps just a time, an event a range
             start
-              ? { start, end: end ?? addMinutesToTime(start, defaultEventMinutes).time, type: "event", date: active.date ?? today }
-              : { start: null, end: null, type: "task" },
+              ? { start, end: active.type === "event" ? (end ?? addMinutesToTime(start, defaultEventMinutes).time) : null, date: active.date ?? today }
+              : { start: null, end: null },
           )
         }
       />
@@ -251,7 +256,7 @@ function touched(patch: Partial<Draft>): UncertainField[] {
   const out: UncertainField[] = [];
   if (patch.title !== undefined) out.push("title");
   if (patch.date !== undefined) out.push("date");
-  if (patch.start !== undefined) out.push("time", "type");
+  if (patch.start !== undefined) out.push("time");
   if (patch.type !== undefined) out.push("type");
   if (patch.categoryId !== undefined) out.push("category");
   if (patch.priority !== undefined) out.push("priority");

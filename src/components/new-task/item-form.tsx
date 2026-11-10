@@ -96,8 +96,10 @@ export function ItemForm({
 
   const category = categories.find((c) => c.id === form.categoryId);
   const busy = create.isPending || update.isPending || Boolean(pending);
-  const canSave = form.title.trim().length > 0 && (form.type === "task" || (form.date && form.start));
+  // an Event without a time can still go to the AI (it may find the time in the sentence)
+  const canSave = form.title.trim().length > 0 && (form.type === "task" || (form.date && form.start) || (!item && Boolean(onBeforeSubmit)));
 
+  // switching keeps the date and time; an event without a time asks for one
   function setType(type: ItemType) {
     touch("type");
     if (type === "event" && !form.start) {
@@ -105,7 +107,8 @@ export function ItemForm({
       setPicker("time");
       return;
     }
-    setForm({ type });
+    if (type === "event") setForm({ type, end: form.end ?? addMinutesToTime(form.start!, defaultEventMinutes).time });
+    else setForm({ type, end: null });
   }
 
   function close() {
@@ -115,13 +118,17 @@ export function ItemForm({
   async function submit() {
     if (!canSave || busy) return;
     if (!item && onBeforeSubmit && (await onBeforeSubmit(form, touched))) return;
+    if (form.type === "event" && !form.start) {
+      setPicker("time"); // saving as typed: an event needs a time first
+      return;
+    }
     setError(null);
     const input: ItemInput = {
       type: form.type,
       title: form.title.trim(),
       notes: form.notes.trim() || null,
       date: form.date,
-      start_time: form.type === "event" ? form.start : null,
+      start_time: form.start,
       end_time: form.type === "event" ? form.end : null,
       priority: form.priority,
       category_id: form.categoryId,
@@ -254,19 +261,17 @@ export function ItemForm({
       />
       <TimePickerSheet
         open={picker === "time"}
-        onClose={() => {
-          setPicker(null);
-          // switched to Event but no time picked → back to Task
-          setFormState((s) => (s.type === "event" && !s.start ? { ...s, type: "task" } : s));
-        }}
+        onClose={() => setPicker(null)}
         value={{ start: form.start, end: form.end }}
         defaultMinutes={defaultEventMinutes}
+        single={form.type === "task"}
         onChange={({ start, end }) => {
-          touch("time", "type");
+          // the time no longer decides the type: a task keeps just a time, an event a range
+          touch("time");
           setForm(
             start
-              ? { start, end: end ?? addMinutesToTime(start, defaultEventMinutes).time, type: "event", date: form.date ?? today }
-              : { start: null, end: null, type: "task" },
+              ? { start, end: form.type === "event" ? (end ?? addMinutesToTime(start, defaultEventMinutes).time) : null, date: form.date ?? today }
+              : { start: null, end: null },
           );
         }}
       />

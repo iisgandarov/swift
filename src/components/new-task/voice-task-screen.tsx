@@ -13,6 +13,7 @@ import { RecordingOverlay } from "@/components/voice/recording-overlay";
 import { ResultReview } from "@/components/voice/result-review";
 import { useVoiceFlow, type VoiceLang } from "@/components/voice/use-voice-flow";
 import { FormFrame } from "./form-frame";
+import type { ItemType } from "@/lib/domain/types";
 
 /** Voice task: one big mic button. Opening this screen starts listening right away. */
 export function VoiceTaskScreen() {
@@ -24,7 +25,21 @@ export function VoiceTaskScreen() {
   const [kept, setKept] = useState<string | null>(null); // transcript kept after an AI failure
 
   const onFallbackText = useCallback((text: string) => setKept(text), []);
-  const flow = useVoiceFlow({ lang, onFallbackText });
+  // Task / Event chosen before speaking; "auto" lets the rules decide
+  const [kind, setKind] = useState<"auto" | ItemType>("auto");
+  const flow = useVoiceFlow({ lang, type: kind === "auto" ? undefined : kind, onFallbackText });
+  const typePicker = (
+    <Segmented<"auto" | ItemType>
+      label={t("field.type")}
+      value={kind}
+      options={[
+        { value: "auto", label: t("voice.auto") },
+        { value: "task", label: t("type.task") },
+        { value: "event", label: t("type.event") },
+      ]}
+      onChange={setKind}
+    />
+  );
   const { recorder } = flow;
 
   const started = useRef(false);
@@ -87,7 +102,8 @@ export function VoiceTaskScreen() {
           )}
         </div>
 
-        <div className="mx-auto w-full max-w-xs pt-6">
+        <div className="mx-auto w-full max-w-xs space-y-3 pt-6">
+          {typePicker}
           <Segmented<VoiceLang>
             label={t("voice.language")}
             value={lang}
@@ -105,6 +121,7 @@ export function VoiceTaskScreen() {
       </div>
 
       <RecordingOverlay
+        controls={typePicker}
         mode={overlayMode}
         elapsed={recorder.elapsed}
         maxMs={recorder.maxMs}

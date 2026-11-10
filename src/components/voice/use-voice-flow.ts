@@ -4,7 +4,8 @@ import { useCallback, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { ParseResult } from "@/lib/ai/schema";
 import { mockParse } from "@/lib/ai/mock";
-import { draftsFromResult, type Draft } from "@/lib/domain/drafts";
+import { draftsFromResult, withType, type Draft } from "@/lib/domain/drafts";
+import type { ItemType } from "@/lib/domain/types";
 import { toWav16k } from "@/lib/client/wav";
 import { api, ApiError } from "@/lib/client/api";
 import { useCategories } from "@/lib/client/queries";
@@ -35,7 +36,16 @@ export interface VoiceResult {
  * Voice/text → drafts. Handles recording, upload, parsing errors and empty results.
  * On an AI failure the transcript is handed back via onFallbackText so nothing is lost.
  */
-export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFallbackText: (text: string) => void }) {
+export function useVoiceFlow({
+  lang,
+  type,
+  onFallbackText,
+}: {
+  lang: VoiceLang;
+  /** Task / Event picked on the voice screen before speaking (undefined = automatic) */
+  type?: ItemType;
+  onFallbackText: (text: string) => void;
+}) {
   const t = useTranslations("voice");
   const toast = useToast();
   const online = useOnline();
@@ -106,20 +116,21 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
         form.append("audio", new File([r.blob], `voice.${ext}`, { type: r.mimeType.split(";")[0] }));
       }
       form.append("lang", lang);
+      if (type) form.append("type", type);
       form.append("duration", String(Math.round(r.durationMs)));
       try {
         // the server gives up after ~50 s; don't leave "Understanding..." spinning longer than that
         const res = await fetch("/api/voice", { method: "POST", body: form, credentials: "same-origin", signal: AbortSignal.timeout(CLIENT_TIMEOUT_MS) });
         const body = (await res.json().catch(() => ({}))) as Partial<ParseResponse> & { error?: string };
         if (!res.ok) throw Object.assign(new ApiError(res.status, body.error ?? "server_error"), { transcript: body.transcript });
-        handle(body as ParseResponse, "voice");
+        handle(body as ParseResponse, "voice", type ? (d) => withType(d, type) : undefined);
       } catch (err) {
         const transcript = (err as { transcript?: string }).transcript;
         const name = err instanceof Error ? err.name : "";
         fail(name === "TimeoutError" || name === "AbortError" ? new ApiError(0, "timeout") : err instanceof TypeError ? new ApiError(0, "network") : err, transcript);
       }
     },
-    [lang, handle, fail],
+    [lang, type, handle, fail],
   );
 
   const recorder = useRecorder({ onComplete: upload });
@@ -139,7 +150,7 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
    * the AI's answer replaces it a moment later. If the AI fails, the draft stays for review.
    */
   const parseText = useCallback(
-    async (text: string, transform?: (d: Draft) => Draft): Promise<boolean> => {
+    async (text: string, transform?: (d: Draft) => Draft, preferredType?: ItemType): Promise<boolean> => {
       if (!online) {
         toast({ message: t("offline"), tone: "error" });
         return false;
@@ -149,7 +160,7 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
       try {
         const local = mockParse(text, {
           now: new Date().toISOString(), timezone: tz, localDate: today, localTime: nowTime,
-          weekday: "", uiLocale: locale, categories: categories.flatMap((c) => [c.name_az, c.name_en]), defaultEventMinutes,
+          weekday: "", uiLocale: locale, categories: categories.flatMap((c) => [c.name_az, c.name_en]), defaultEventMinutes, preferredType,
         });
         let drafts = draftsFromResult(local, { categories, defaultEventMinutes, today });
         if (transform) drafts = drafts.map(transform);
@@ -164,7 +175,7 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
         setState("processing");
       }
       try {
-        const body = await api<ParseResponse>("/api/parse", { method: "POST", json: { text }, timeoutMs: CLIENT_TIMEOUT_MS });
+        const body = await api<ParseResponse>("/api/parse", { method: "POST", json: { text, type: preferredType }, timeoutMs: CLIENT_TIMEOUT_MS });
         if (gen !== generation.current) return false;
         if (preview && draftsFromResult(body, { categories, defaultEventMinutes, today }).length === 0) {
           // the AI found nothing actionable but the draft did: keep the draft for review

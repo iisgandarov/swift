@@ -20,12 +20,15 @@ export function TimePickerSheet({
   value,
   defaultMinutes,
   onChange,
+  single = false,
 }: {
   open: boolean;
   onClose: () => void;
   value: TimeValue;
   defaultMinutes: number;
   onChange: (v: TimeValue) => void;
+  /** one time only (a task's deadline / reminder): no end time or duration */
+  single?: boolean;
 }) {
   const t = useTranslations();
   const [start, setStart] = useState(value.start ?? "09:00");
@@ -62,7 +65,7 @@ export function TimePickerSheet({
           <Button
             className="flex-1"
             onClick={() => {
-              onChange({ start, end });
+              onChange({ start, end: single ? null : end });
               onClose();
             }}
           >
@@ -71,7 +74,7 @@ export function TimePickerSheet({
         </div>
       }
     >
-      <div className="grid grid-cols-2 gap-3">
+      <div className={single ? "grid grid-cols-1 gap-3" : "grid grid-cols-2 gap-3"}>
         <label className="block">
           <span className="mb-1.5 block text-sm text-muted">{t("field.start")}</span>
           <input
@@ -86,6 +89,7 @@ export function TimePickerSheet({
             className="h-14 w-full rounded-2xl border border-line bg-surface-2 px-4 text-lg font-semibold tabular-nums"
           />
         </label>
+        {!single && (
         <label className="block">
           <span className="mb-1.5 block text-sm text-muted">{t("field.end")}</span>
           <input
@@ -95,7 +99,10 @@ export function TimePickerSheet({
             className="h-14 w-full rounded-2xl border border-line bg-surface-2 px-4 text-lg font-semibold tabular-nums"
           />
         </label>
+        )}
       </div>
+      {!single && (
+      <>
       <p className="mt-5 mb-2 text-sm text-muted">{t("field.duration")}</p>
       <div className="chrome flex flex-wrap gap-2">
         {DURATIONS.map((m) => (
@@ -111,6 +118,8 @@ export function TimePickerSheet({
           </button>
         ))}
       </div>
+      </>
+      )}
     </Sheet>
   );
 }

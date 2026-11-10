@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { Loader2, Mic, Square, X } from "lucide-react";
+import type { ReactNode } from "react";
 
 function fmt(ms: number) {
   const s = Math.floor(ms / 1000);
@@ -18,7 +19,10 @@ export function RecordingOverlay({
   levels,
   onStop,
   onCancel,
+  controls,
 }: {
+  /** shown top-left while recording, e.g. the Task / Event choice */
+  controls?: ReactNode;
   mode: "recording" | "processing" | null;
   elapsed: number;
   maxMs: number;
@@ -42,7 +46,8 @@ export function RecordingOverlay({
           className="chrome fixed inset-0 z-[55] flex flex-col items-center justify-between bg-bg/95 px-6 backdrop-blur-xl"
           style={{ paddingTop: "calc(var(--safe-top) + 16px)", paddingBottom: "calc(var(--safe-bottom) + 40px)" }}
         >
-          <div className="flex w-full justify-end">
+          <div className="flex w-full items-center justify-between gap-3">
+            <div className="min-w-0">{mode === "recording" && controls}</div>
             {mode === "recording" && (
               <button
                 type="button"
