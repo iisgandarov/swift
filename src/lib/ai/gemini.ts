@@ -164,21 +164,23 @@ export class GeminiProvider implements AiProvider {
     return this.deadline - Date.now();
   }
 
-  parseItems(text: string, ctx: ParseContext, opts: { retryHint?: string } = {}) {
-    return this.generate("text", buildSystemPrompt(ctx), [{ text: `The user's text:\n"""${text.slice(0, 4000)}"""` }], parseResultJsonSchema, opts.retryHint);
+  parseItems(text: string, ctx: ParseContext, opts: { retryHint?: string; retry?: boolean } = {}) {
+    return this.generate("text", buildSystemPrompt(ctx), [{ text: `The user's text:\n"""${text.slice(0, 4000)}"""` }], parseResultJsonSchema, opts.retryHint, !opts.retry);
   }
 
-  parseAudio(audio: AudioInput, ctx: ParseContext, opts: { lang?: "az" | "en"; retryHint?: string } = {}) {
+  parseAudio(audio: AudioInput, ctx: ParseContext, opts: { lang?: "az" | "en"; retryHint?: string; retry?: boolean } = {}) {
     return this.generate(
       "audio",
       buildSystemPrompt(ctx) + "\n\n" + buildAudioInstruction(opts.lang),
       [{ text: "Transcribe this voice note, then extract the items." }, { inlineData: { mimeType: normalizeAudioMime(audio.mimeType), data: audio.base64 } }],
       parseAudioJsonSchema,
       opts.retryHint,
+      !opts.retry,
     );
   }
 
-  private async generate(kind: Kind, system: string, parts: Part[], schema: object, retryHint?: string): Promise<string> {
+  /** `hedge`: allow one duplicate request if Google is slow (first attempt only, to save free-tier quota) */
+  private async generate(kind: Kind, system: string, parts: Part[], schema: object, retryHint?: string, hedge = true): Promise<string> {
     const instruction = retryHint ? `${system}\n\n${retryHint}` : system;
     // once a model has answered, stay on it for the rest of this request (e.g. the retry)
     const models = this.modelUsed ? [this.modelUsed] : this.usableModels();
@@ -189,7 +191,7 @@ export class GeminiProvider implements AiProvider {
       let useSchema = true;
       // up to 4 tries on the same model: as-is, then with a less strict thinking / without a rejected schema setting
       for (let variant = 0; variant < 4; variant++) {
-        const r = await this.hedgedCall(kind, model, instruction, parts, schema, thinking, useSchema);
+        const r = await this.hedgedCall(kind, model, instruction, parts, schema, thinking, useSchema, hedge);
         if (r.ok) {
           memory.unavailable.delete(model);
           if (this.modelUsed !== model) console.info(`[gemini] model used: ${model}${model !== this.models[0] ? ` (fallback from ${this.models[0]})` : ""}`);
@@ -222,11 +224,11 @@ export class GeminiProvider implements AiProvider {
    * latency varies a lot; a second request often comes back sooner). First success wins and the
    * other request is cancelled. Duplicates are capped per minute to respect the free-tier RPM.
    */
-  private async hedgedCall(kind: Kind, model: string, system: string, parts: Part[], schema: object, thinking: Thinking, useSchema: boolean) {
+  private async hedgedCall(kind: Kind, model: string, system: string, parts: Part[], schema: object, thinking: Thinking, useSchema: boolean, allowHedge = true) {
     const maxOutputTokens = MAX_OUTPUT_TOKENS[kind];
     const primaryStop = new AbortController();
     const primary = this.call(model, system, parts, schema, thinking, useSchema, { maxOutputTokens, cancel: primaryStop.signal });
-    const after = this.hedgeAfterMs?.[kind];
+    const after = allowHedge ? this.hedgeAfterMs?.[kind] : undefined;
     if (!after) return primary;
 
     let timer: ReturnType<typeof setTimeout> | undefined;

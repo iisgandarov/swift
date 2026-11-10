@@ -52,15 +52,15 @@ export const parseResultJsonSchema = {
         properties: {
           type: { type: "string", enum: ["task", "event"] },
           title: { type: "string", description: "Short and concise, max ~6 words, in the spoken language." },
-          notes: { type: ["string", "null"] },
-          date: { type: ["string", "null"], description: "YYYY-MM-DD" },
-          start_time: { type: ["string", "null"], description: "HH:mm 24h" },
-          end_time: { type: ["string", "null"], description: "HH:mm 24h" },
-          duration_minutes: { type: ["integer", "null"] },
+          notes: { type: ["string", "null"], description: "Extra details, or null" },
+          date: { type: ["string", "null"], description: "YYYY-MM-DD only, e.g. 2026-11-10 (no time part)" },
+          start_time: { type: ["string", "null"], description: "HH:mm 24h with two-digit hour, e.g. 09:00, 17:30 (no seconds)" },
+          end_time: { type: ["string", "null"], description: "HH:mm 24h like start_time; null for tasks" },
+          duration_minutes: { type: ["integer", "null"], minimum: 1, maximum: 1440, description: "Minutes; null for tasks or when not said" },
           all_day: { type: "boolean" },
           priority: { type: "string", enum: ["low", "medium", "high"] },
           category: { type: ["string", "null"], description: "Exactly one of the user's category names. Never null: Meeting, Work or Personal when nothing more specific fits." },
-          confidence: { type: "number" },
+          confidence: { type: "number", minimum: 0, maximum: 1, description: "0..1, e.g. 0.9" },
           clarification: { type: ["string", "null"] },
           uncertain_fields: { type: "array", items: { type: "string", enum: [...UNCERTAIN_FIELDS] } },
         },
@@ -113,9 +113,9 @@ export class AiProviderError extends Error {
 export interface AiProvider {
   readonly name: string;
   /** Text → raw JSON string matching parseResultSchema (validated by the caller). */
-  parseItems(text: string, ctx: ParseContext, opts?: { retryHint?: string }): Promise<string>;
+  parseItems(text: string, ctx: ParseContext, opts?: { retryHint?: string; retry?: boolean }): Promise<string>;
   /** Audio → raw JSON string matching parseResultSchema including `transcript`, in ONE call. */
-  parseAudio(audio: AudioInput, ctx: ParseContext, opts?: { lang?: "az" | "en"; retryHint?: string }): Promise<string>;
+  parseAudio(audio: AudioInput, ctx: ParseContext, opts?: { lang?: "az" | "en"; retryHint?: string; retry?: boolean }): Promise<string>;
   /** ms left in this request's time budget (providers with a budget only) */
   timeLeft?(): number;
 }

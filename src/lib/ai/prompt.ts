@@ -43,6 +43,18 @@ ${dateTable(ctx.localDate)}
 - detected_language: Azerbaijani with English words is still "az".
 - confidence 0..1. If ambiguous: clarification (one short sentence, user's language) + uncertain_fields. Nothing actionable → items [] and top-level clarification.
 
+## Output format (exact)
+- Every field of every item is always present; use null when unknown, never leave a field out.
+- date: "YYYY-MM-DD" only. start_time / end_time: "HH:mm", 24-hour, two-digit hour ("09:00", not "9:00"), no seconds.
+- task: end_time null and duration_minutes null. event: end_time or duration_minutes may be null (default length).
+- confidence: a number from 0 to 1 (0.9, not 90). priority: "low" | "medium" | "high". uncertain_fields: only "title", "type", "date", "time", "category", "priority".
+- title: never empty; notes: extra details or null.
+Two complete answers (Now = 2026-11-09 10:00):
+"Saat 5-də dərman iç" →
+{"detected_language":"az","clarification":null,"items":[{"type":"task","title":"Dərman iç","notes":null,"date":"2026-11-09","start_time":"17:00","end_time":null,"duration_minutes":null,"all_day":false,"priority":"medium","category":"Şəxsi","confidence":0.8,"clarification":null,"uncertain_fields":["time"]}]}
+"Tomorrow 9am call with Aysel, 30 minutes" →
+{"detected_language":"en","clarification":null,"items":[{"type":"event","title":"Call with Aysel","notes":null,"date":"2026-11-10","start_time":"09:00","end_time":"09:30","duration_minutes":30,"all_day":false,"priority":"medium","category":"Meeting","confidence":0.95,"clarification":null,"uncertain_fields":[]}]}
+
 ## Examples (Now = 2026-11-09 10:00 Monday; categories "İş", "Görüş", "Şəxsi", "EduPo", "TLB Academy"; other fields as usual)
 1. "Sabah saat 10-da Ramizlə EduPo demo görüşü" → event "EduPo demo — Ramiz", 2026-11-10 10:00, category EduPo
 2. "Cümə gününə qədər Power BI hesabatını bitirməliyəm, təcilidir" → task "Power BI hesabatını bitir", 2026-11-13, no time, high, İş

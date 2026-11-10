@@ -128,7 +128,7 @@ describe("failures: retry once, then a clear error code", () => {
   it("invalid JSON then valid, the retry tells the model what went wrong", async () => {
     const { provider, calls } = fakeGemini([{ text: "{not json" }, valid]);
     await expect(parseWithRetry(provider, "x", ctx, noSleep)).resolves.toBeTruthy();
-    expect(JSON.stringify(calls[1].body.systemInstruction)).toContain("not valid JSON");
+    expect(JSON.stringify(calls[1].body.systemInstruction)).toContain("not a complete JSON object");
   });
   it("invalid JSON twice → ai_parse_failed", async () => {
     const { provider } = fakeGemini([{ text: "nope" }, { text: "still nope" }]);

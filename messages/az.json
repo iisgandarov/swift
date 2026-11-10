@@ -97,18 +97,25 @@
     "offline": "Səsli tapşırıq üçün internet lazımdır.",
     "nothingHeard": "Tapşırıq eşitmədim. Yenidən cəhd edək?",
     "error": "Anlayarkən xəta baş verdi. Sözlərin saxlanıldı, redaktə edə bilərsən.",
-    "rateLimited": "Bu saat üçün səs limiti doldu. Bir az sonra yenidən cəhd et.",
     "confirmTitle": "Yadda saxlamadan əvvəl yoxla",
     "createAll": "Hamısını yarat",
     "recordAgain": "Yenidən danış",
     "remove": "Sil",
     "transcript": "Dediyin",
     "created": "{count} element yaradıldı",
-    "quota": "AI limiti bu dəqiqə üçün doldu. Bir az sonra yenidən cəhd et — mətnin saxlanıldı.",
-    "notConfigured": "Səsli və mətnli anlama hələ qurulmayıb (GEMINI_API_KEY). Tapşırığı formla əlavə edə bilərsən.",
-    "timeout": "Cavab çox gecikdi. Bir az sonra yenidən cəhd et — mətnin saxlanıldı.",
     "refining": "Dəqiqləşdirilir…",
-    "refineFailed": "AI dəqiqləşdirə bilmədi. Sahələri yoxla və yarat."
+    "why": {
+      "rateLimited": "Bu saat üçün AI limiti doldu (saatda 30 sorğu).",
+      "quota": "Google AI-ın pulsuz limiti bu dəqiqə üçün doldu.",
+      "timeout": "Google AI vaxtında cavab vermədi.",
+      "unavailable": "Google AI hazırda xəta verir.",
+      "badAnswer": "Google AI yarımçıq cavab verdi.",
+      "notConfigured": "AI qurulmayıb (GEMINI_API_KEY).",
+      "offline": "İnternet yoxdur.",
+      "other": "Serverdə xəta baş verdi.",
+      "textKept": "Mətnin saxlanıldı, bir az sonra yenidən cəhd et.",
+      "draftKept": "Qaralama saxlanıldı: yoxla və yarat."
+    }
   },
   "action": {
     "create": "Tapşırıq yarat",

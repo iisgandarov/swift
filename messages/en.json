@@ -97,18 +97,25 @@
     "offline": "Voice needs an internet connection.",
     "nothingHeard": "I didn't catch a task there. Try again?",
     "error": "Something went wrong while understanding. Your words are kept so you can edit them.",
-    "rateLimited": "Too many voice requests this hour. Try again a bit later.",
     "confirmTitle": "Check before saving",
     "createAll": "Create all",
     "recordAgain": "Record again",
     "remove": "Remove",
     "transcript": "You said",
     "created": "{count, plural, one {# item created} other {# items created}}",
-    "quota": "The AI limit is reached for now. Try again in a bit — your text is kept.",
-    "notConfigured": "Voice and text understanding isn't set up yet (GEMINI_API_KEY). You can still add the task with the form.",
-    "timeout": "The answer took too long. Try again in a moment — your text is kept.",
     "refining": "Refining…",
-    "refineFailed": "The AI couldn't refine this. Check the fields and create."
+    "why": {
+      "rateLimited": "The hourly AI limit is reached (30 requests per hour).",
+      "quota": "Google AI's free limit is used up for this minute.",
+      "timeout": "Google AI didn't answer in time.",
+      "unavailable": "Google AI is returning an error right now.",
+      "badAnswer": "Google AI sent an incomplete answer.",
+      "notConfigured": "AI isn't set up (GEMINI_API_KEY).",
+      "offline": "You're offline.",
+      "other": "Something went wrong on the server.",
+      "textKept": "Your text is kept — try again in a moment.",
+      "draftKept": "The draft is kept — check it and create."
+    }
   },
   "action": {
     "create": "Create Task",

@@ -73,30 +73,32 @@ export function useVoiceFlow({
     [categories, defaultEventMinutes, today, onFallbackText, toast, t],
   );
 
+  /** The real reason, in plain words (never a vague "couldn't refine"). */
+  const reason = useCallback(
+    (err: unknown) => {
+      // a 504 from the platform means the server ran out of time before answering
+      const code = err instanceof ApiError ? (err.status === 504 ? "timeout" : err.code) : "";
+      const key =
+        code === "rate_limited" ? "rateLimited"
+        : code === "ai_quota" ? "quota"
+        : code === "ai_timeout" || code === "timeout" ? "timeout"
+        : code === "ai_unavailable" || code === "ai_blocked" ? "unavailable"
+        : code === "ai_parse_failed" ? "badAnswer"
+        : code === "ai_not_configured" ? "notConfigured"
+        : code === "network" ? "offline"
+        : "other";
+      return t(`why.${key}`);
+    },
+    [t],
+  );
+
   const fail = useCallback(
     async (err: unknown, transcript?: string) => {
       setState("idle");
       if (transcript) onFallbackText(transcript);
-      // a 504 from the platform means the server ran out of time before answering
-      const code = err instanceof ApiError ? (err.status === 504 ? "timeout" : err.code) : "";
-      toast({
-        message:
-          code === "rate_limited"
-            ? t("rateLimited")
-            : code === "ai_quota"
-              ? t("quota")
-              : code === "ai_timeout" || code === "timeout"
-                ? t("timeout")
-                : code === "ai_not_configured"
-                ? t("notConfigured")
-                : code === "network"
-                  ? t("offline")
-                  : t("error"),
-        tone: "error",
-        duration: 6000,
-      });
+      toast({ message: `${reason(err)} ${t("why.textKept")}`, tone: "error", duration: 6000 });
     },
-    [onFallbackText, toast, t],
+    [onFallbackText, toast, t, reason],
   );
 
   const upload = useCallback(
@@ -188,14 +190,14 @@ export function useVoiceFlow({
         if (gen !== generation.current) return false;
         if (preview) {
           setResult({ ...preview, refining: false });
-          toast({ message: t("refineFailed"), duration: 6000 });
+          toast({ message: `${reason(err)} ${t("why.draftKept")}`, duration: 6000 });
           return true;
         }
         fail(err, text);
         return false;
       }
     },
-    [online, handle, fail, toast, t, tz, today, nowTime, locale, categories, defaultEventMinutes],
+    [online, handle, fail, reason, toast, t, tz, today, nowTime, locale, categories, defaultEventMinutes],
   );
 
   const close = useCallback(() => {

@@ -73,7 +73,8 @@ test("text: if the AI fails, the instant draft stays and can be saved", async ({
   await page.goto("/new/text");
   await page.locator("#title").fill("sabah saat 10-da Ramizlə görüş");
   await page.getByTestId("create-item").click();
-  await expect(page.getByText(/dəqiqləşdirə bilmədi|couldn't refine/)).toBeVisible();
+  // the real reason, never a vague "couldn't refine"
+  await expect(page.getByText(/Google AI hazırda xəta verir|Google AI is returning an error/)).toBeVisible();
   await expect(page.getByTestId("create-all")).toBeEnabled();
   await page.getByTestId("create-all").click();
   await expect(page).toHaveURL(/\/$/);
