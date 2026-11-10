@@ -91,11 +91,17 @@ function parseOne(raw: string, ctx: ParseContext, carryDate: string | null): Par
   const explicitTask = /(?<!\p{L})(tapşırıq|task)(?!\p{L})/u.test(s);
   const explicitEvent = /(?<!\p{L})(tədbir|event)(?!\p{L})/u.test(s);
   const withPerson = /(?<!\p{L})(ilə|with)(?!\p{L})/u.test(s) || /(?<!\p{L})\p{Lu}\p{Ll}+(lə|la)(?!\p{L})/u.test(raw) || /(?<!\p{L})(anam|atam|dost\p{L}*|ailə\p{L}*|qardaş\p{L}*|bacı\p{L}*)(la|lə)(?!\p{L})/u.test(s);
+  // appointments and fixed-time activities are events too
+  const sfx = "(?:u|ü|ı|i|a|ə|da|də|dan|dən|un|ün|ın|in|na|nə|ya|yə|nda|ndə|lar\\p{L}*|lər\\p{L}*)?"; // case endings only: "toya" yes, "toyuq" no
+  const activity = new RegExp(
+    `(?<!\\p{L})(?:(?:qəbul|həkim|dərs|kurs|uçuş|müsahibə|vebinar|konsert|təlim|toy|ad günü)${sfx}|appointments?|class(?:es)?|lessons?|flights?|interviews?|webinars?|concerts?|trainings?|party|parties)(?!\\p{L})`,
+    "u",
+  ).test(s);
   const isEvent = ctx.preferredType
     ? ctx.preferredType === "event"
     : explicitTask
       ? false
-      : explicitEvent || bucketFor(raw) === "meeting" || withPerson;
+      : explicitEvent || bucketFor(raw) === "meeting" || withPerson || activity;
 
   let title = s
     .replace(/(?<!\p{L})(tapşırıq|tədbir|task|event)( kimi| olaraq)?:?(?!\p{L})/gu, " ")

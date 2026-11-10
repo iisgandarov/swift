@@ -32,7 +32,7 @@ ${dateTable(ctx.localDate)}
   }
 
 ## Rules
-- Type, in this order: (1) the type the user chose (see Context); (2) explicit words: "tapşırıq"/"task" → task, "tədbir"/"event" → event; (3) a meeting, a call / zəng with someone, or a plan with a person ("X ilə", "with X": dinner with family, Ramizlə görüş) → event; (4) everything else → task. A clock time alone does NOT make an event: a task keeps its time in start_time (deadline/reminder; end_time and duration_minutes null). An event needs a clock time; if there is none, use task and flag "type". Vague part of day without a clock time ("sabah axşam", "tomorrow afternoon") → no start_time, part of day in notes. Event without end/duration → end_time and duration_minutes null.
+- Type, in this order: (1) the type the user chose (see Context); (2) explicit words: "tapşırıq"/"task" → task, "tədbir"/"event" → event; (3) a meeting, a call / zəng with someone, a plan with a person ("X ilə", "with X": dinner with family, Ramizlə görüş), or an appointment / fixed-time activity → event: qəbul, həkim, appointment, dərs, kurs, class, lesson, uçuş, flight, müsahibə, interview, vebinar, webinar, konsert, concert, təlim, training, toy, ad günü, party; (4) everything else → task. A clock time alone does NOT make an event: a task keeps its time in start_time (deadline/reminder; end_time and duration_minutes null). An event needs a clock time; if there is none, use task and flag "type". Vague part of day without a clock time ("sabah axşam", "tomorrow afternoon") → no start_time, part of day in notes. Event without end/duration → end_time and duration_minutes null.
 - Several items ("…, bir də …", "sonra da", "həm də", "and also") → separate items; a shared date carries over. One item described twice is ONE item: "Axşama görüş olacaq, onu qeyd et: dostlarla görüş saat 20.30-da" = one event.
 - Title: max ~6 words, spoken language, most specific wording ("Dostlarla görüş", not "Görüş"), imperative/noun form ("Power BI hesabatını bitir", "Call the bank"). Drop filler: "onu qeyd et", "qeyd et", "yadıma sal", "yadımda saxla", "xatırlat", "xatırlat ki", "olacaq", "lazımdır", "etməliyəm", "remind me to", "note that", "I need to", "don't forget to". Fix speech-to-text typos. Details go in notes.
 - Dates: bu gün = today; sabah = tomorrow; birigün = +2 days; "axşama"/"bu axşam"/"axşam"/"tonight" without another day = TODAY evening; gələn həftə = Monday of next week; həftə sonu = Saturday; ayın sonu = last day of month; "3 gündən sonra" = +3 days. "çərşənbə axşamı" = Tuesday and "cümə axşamı" = Thursday (weekdays, NOT evenings). A bare weekday = its next occurrence (today if still ahead). "cümə gününə qədər"/"by Friday" = deadline that Friday. "next/gələn <weekday>" = that weekday in NEXT calendar week: on Monday 2026-11-09 "next Friday" = 2026-11-20, "this Friday"/"bu cümə" = 2026-11-13.
@@ -58,6 +58,8 @@ ${dateTable(ctx.localDate)}
 12. "Saat 5-də dərman iç" → task "Dərman iç", 17:00 (task WITH a time), Şəxsi
 13. "Sabah saat 10-da hesabatı göndər, tapşırıq kimi" → task "Hesabatı göndər", 2026-11-10 10:00, İş
 14. "Cümə günü saat 3-də tədbir: komanda yığıncağı" → event "Komanda yığıncağı", 2026-11-13 15:00, Görüş
+15. "Sabah saat 11-də həkim qəbulu" → event "Həkim qəbulu", 2026-11-10 11:00, Şəxsi
+16. "Friday 6pm flight to Istanbul" → event "Flight to Istanbul", 2026-11-13 18:00, Şəxsi
 (Use the real category names, e.g. "Personal" when categories are in English.)`;
 }
 
