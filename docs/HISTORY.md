@@ -210,6 +210,18 @@ He sent six items and asked for "commit after each, push at the end, short repor
 
 ---
 
+## Phase 7 — Speed, a production fix, logo and categories (2026-11-10, `e6c708b` … `34cc2f7`)
+
+- **Speed** (`e6c708b`–`fdf9490`): Settings → Speed (p50/p90 per stage, Server-Timing) and `/api/ai/test?runs=N&model=…`; rate limit and context run in parallel, auth via `getClaims`; hedged Gemini request after 3 s (text) / 4 s (voice), max 4 per minute; unavailable models remembered 10 min; prompt −31%; no pause before retry; voice trims silence; items saved in one insert with Calendar sync after the response; text tasks open an instant on-device draft ("Refining…"). He chose to skip the before/after measurement and test himself.
+- **Production bug** (`d2ba2cc`): after the deploy, every text and voice request failed. Cause (inferred from the code, logs not reachable): the new `maxOutputTokens` 1500/2500 counted Gemini 3 thinking tokens, so answers were cut off empty. Raised to 8192; "minimal" thinking falls back to "low"; empty answers now log finishReason and token counts.
+- **Past times** (`306146e`): "saat 7" at 17:20 became 07:00 today. Now a past bare morning hour becomes the evening if still ahead, else tomorrow, flagged for review (on-device draft and prompt); "7de" is understood.
+- **Logo** (`7078d8e`): his original file is `design/logo-original.png` (pixel-identical). `scripts/generate-icons.mjs` only trims, resizes and pads it (maskable 80% safe zone). New names `swift-*.png` because the service worker serves icons cache-first; `icon-192.png` / `icon.svg` kept for its precache (service worker untouched).
+- **Categories** (`484c127`): never empty. Own category name → Meeting (görüş, zəng with someone) → Work (iş, hesabat, layihə, müştəri…) → Personal. Same rules in the prompt, the on-device draft and as the fallback when the AI leaves it empty (`src/lib/domain/categorize.ts`).
+- **Task card** (`34cc2f7`): small category chip right after the time, same 13 px size.
+- New rule in CLAUDE.md: never commit secrets; check every diff first.
+
+---
+
 ## Rejected or replaced options (summary)
 
 | Option | Outcome | Why |
