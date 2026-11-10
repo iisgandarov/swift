@@ -21,6 +21,7 @@ Swift is İsrafil's personal **voice-first task manager**, a PWA that should fee
 
 ## Key rules
 - **Secrets stay server-side.** AI keys are read only in `src/lib/server/env.ts` and sent in headers, never to the browser. Never ask İsrafil to paste keys in chat.
+- **Never commit secrets:** no .env files, API keys, tokens or passwords. Before every commit, check the diff for secrets. If you find one, stop and tell İsrafil.
 - **No hard-coded UI strings or colors.** Use `messages/*.json` and the CSS tokens (`btn-primary`, `sel`, `seg-on`, `fab`, `avatar`, `text-accent`).
 - **Navigation is client-side.** One `AppShell` renders every screen from the URL; use `navigate()` / `AppLink` from `src/lib/client/nav.ts`, not `<Link>` or `router.push`. Route files return `null`.
 - **Task vs event rules** live in `src/lib/domain/rules.ts`: a clock time means event, the default event length comes from Settings, and completing an item is app-only. Google sync never loses data; on failure it sets `sync_status = failed` and shows Retry.
