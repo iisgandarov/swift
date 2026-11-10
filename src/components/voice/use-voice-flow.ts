@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { ParseResult } from "@/lib/ai/schema";
+import { mockParse } from "@/lib/ai/mock";
 import { draftsFromResult, type Draft } from "@/lib/domain/drafts";
 import { toWav16k } from "@/lib/client/wav";
 import { api, ApiError } from "@/lib/client/api";
@@ -27,6 +28,8 @@ export interface VoiceResult {
   transcript: string;
   language: "az" | "en";
   source: "voice" | "text";
+  /** an instant on-device draft is shown while the AI works; saving waits for the AI */
+  refining?: boolean;
 }
 
 /**
@@ -38,9 +41,11 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
   const toast = useToast();
   const online = useOnline();
   const categories = useCategories();
-  const { today, defaultEventMinutes } = useAppSettings();
+  const { today, defaultEventMinutes, tz, nowTime, locale } = useAppSettings();
   const [state, setState] = useState<FlowState>("idle");
   const [result, setResult] = useState<VoiceResult | null>(null);
+  // answers that arrive after the user closed the sheet or started over are ignored
+  const generation = useRef(0);
 
   const handle = useCallback(
     (res: ParseResponse, source: "voice" | "text", transform?: (d: Draft) => Draft): boolean => {
@@ -143,16 +148,39 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
     recorder.start();
   }, [online, recorder, toast, t]);
 
-  /** Resolves true when the confirmation sheet opened; `transform` applies the user's manual choices. */
+  /**
+   * Resolves true when the confirmation sheet opened; `transform` applies the user's manual choices.
+   * The sheet opens at once with a quick on-device draft (marked "refining", not saveable yet);
+   * the AI's answer replaces it a moment later. If the AI fails, the draft stays for review.
+   */
   const parseText = useCallback(
     async (text: string, transform?: (d: Draft) => Draft): Promise<boolean> => {
       if (!online) {
         toast({ message: t("offline"), tone: "error" });
         return false;
       }
-      setState("processing");
+      const gen = ++generation.current;
       const t0 = performance.now();
       const stages: Record<string, number> = {};
+      let preview: VoiceResult | null = null;
+      try {
+        const local = mockParse(text, {
+          now: new Date().toISOString(), timezone: tz, localDate: today, localTime: nowTime,
+          weekday: "", uiLocale: locale, categories: categories.flatMap((c) => [c.name_az, c.name_en]), defaultEventMinutes,
+        });
+        let drafts = draftsFromResult(local, { categories, defaultEventMinutes, today });
+        if (transform) drafts = drafts.map(transform);
+        if (drafts.length) preview = { drafts, transcript: text, language: local.detected_language, source: "text", refining: true };
+      } catch {
+        /* the instant draft is a nicety; the AI answer still comes */
+      }
+      if (preview) {
+        setResult(preview);
+        setState("review");
+        stages.c_draft = Math.round(performance.now() - t0);
+      } else {
+        setState("processing");
+      }
       let ok = false;
       let note: string | undefined;
       try {
@@ -168,18 +196,32 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
           },
         });
         ok = true;
+        if (gen !== generation.current) return false;
+        if (preview && draftsFromResult(body, { categories, defaultEventMinutes, today }).length === 0) {
+          // the AI found nothing actionable but the draft did: keep the draft for review
+          setResult({ ...preview, refining: false });
+          if (body.clarification) toast({ message: body.clarification, duration: 5000 });
+          return true;
+        }
         return handle(body, "text", transform);
       } catch (err) {
+        if (gen !== generation.current) return false;
+        if (preview) {
+          setResult({ ...preview, refining: false });
+          toast({ message: t("refineFailed"), duration: 6000 });
+          return true;
+        }
         fail(err, text);
         return false;
       } finally {
         recordPerf({ kind: "text", at: Date.now(), ok, totalMs: Math.round(performance.now() - t0), stages, note });
       }
     },
-    [online, handle, fail, toast, t],
+    [online, handle, fail, toast, t, tz, today, nowTime, locale, categories, defaultEventMinutes],
   );
 
   const close = useCallback(() => {
+    generation.current++;
     setResult(null);
     setState("idle");
   }, []);

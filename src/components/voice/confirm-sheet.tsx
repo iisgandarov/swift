@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { AlertCircle, CalendarDays, Clock3, Flag, Folder, RotateCcw, X } from "lucide-react";
+import { AlertCircle, CalendarDays, Clock3, Flag, Folder, Loader2, RotateCcw, X } from "lucide-react";
 import type { Draft, UncertainField } from "@/lib/domain/drafts";
 import { draftIsValid } from "@/lib/domain/drafts";
 import type { Priority } from "@/lib/domain/types";
@@ -25,6 +25,7 @@ export function ConfirmSheet({
   drafts,
   transcript,
   busy,
+  refining = false,
   onChange,
   onCreate,
   onRecordAgain,
@@ -35,6 +36,8 @@ export function ConfirmSheet({
   drafts: Draft[];
   transcript: string;
   busy: boolean;
+  /** an instant draft is shown while the AI works: visible, not yet editable or saveable */
+  refining?: boolean;
   onChange: (drafts: Draft[]) => void;
   onCreate: () => void;
   onRecordAgain: () => void;
@@ -65,8 +68,17 @@ export function ConfirmSheet({
               <RotateCcw className="size-4" aria-hidden />
               {againLabel ?? t("voice.recordAgain")}
             </Button>
-            <Button className="flex-1" onClick={onCreate} disabled={!allValid || busy} data-testid="create-all">
-              {drafts.length > 1 ? t("voice.createAll") : t("action.create")}
+            <Button className="flex-1" onClick={onCreate} disabled={!allValid || busy || refining} data-testid="create-all">
+              {refining ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  {t("voice.refining")}
+                </>
+              ) : drafts.length > 1 ? (
+                t("voice.createAll")
+              ) : (
+                t("action.create")
+              )}
             </Button>
           </div>
         }
@@ -76,7 +88,12 @@ export function ConfirmSheet({
             <span className="font-medium">{t("voice.transcript")}:</span> “{transcript}”
           </p>
         )}
-        <ul className="space-y-3">
+        <ul
+          className={cn("space-y-3 transition-opacity", refining && "pointer-events-none opacity-60")}
+          aria-busy={refining}
+          data-testid="draft-list"
+          data-refining={refining ? "true" : undefined}
+        >
           {drafts.map((d) => (
             <li key={d.key} data-testid="draft-card" className="rounded-[20px] border border-line bg-surface-2 p-4">
               <div className="flex items-start gap-2">

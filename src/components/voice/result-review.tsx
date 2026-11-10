@@ -37,7 +37,7 @@ export function ResultReview({ flow, onAgain }: { flow: ReturnType<typeof useVoi
   const handled = useRef<VoiceResult | null>(null);
   useEffect(() => {
     const result = flow.result;
-    if (!autoCreate || !result || handled.current === result) return;
+    if (!autoCreate || !result || result.refining || handled.current === result) return;
     handled.current = result;
     createFrom(result)
       .then((created) => {
@@ -61,6 +61,7 @@ export function ResultReview({ flow, onAgain }: { flow: ReturnType<typeof useVoi
       drafts={flow.result?.drafts ?? []}
       transcript={flow.result?.transcript ?? ""}
       busy={create.isPending}
+      refining={flow.result?.refining ?? false}
       onChange={(drafts) => flow.result && flow.setResult({ ...flow.result, drafts })}
       onClose={flow.close}
       onRecordAgain={onAgain}

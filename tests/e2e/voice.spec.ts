@@ -68,3 +68,33 @@ test("voice, text and save timings appear in Settings → Speed", async ({ page 
     await expect(speed.getByRole("cell", { name: stage, exact: true }).first()).toBeVisible();
   }
 });
+
+test("text: an instant draft shows at once and the AI answer replaces it", async ({ page }) => {
+  // hold the AI answer for 1.5 s to see the instant draft first
+  await page.route("**/api/parse", async (route) => {
+    await new Promise((r) => setTimeout(r, 1500));
+    await route.continue();
+  });
+  await page.goto("/new/text");
+  await page.locator("#title").fill("sabah saat 10-da Ramizlə görüş");
+  const t0 = Date.now();
+  await page.getByTestId("create-item").click();
+  await expect(page.getByTestId("draft-list")).toHaveAttribute("data-refining", "true", { timeout: 1000 });
+  expect(Date.now() - t0).toBeLessThan(1000);
+  await expect(page.getByTestId("draft-card")).toHaveCount(1);
+  await expect(page.getByTestId("create-all")).toBeDisabled();
+  await expect(page.getByTestId("draft-list")).not.toHaveAttribute("data-refining", "true", { timeout: 10_000 });
+  await expect(page.getByTestId("create-all")).toBeEnabled();
+});
+
+test("text: if the AI fails, the instant draft stays and can be saved", async ({ page }) => {
+  await page.route("**/api/parse", (route) => route.fulfill({ status: 502, contentType: "application/json", body: '{"error":"ai_unavailable"}' }));
+  await page.goto("/new/text");
+  await page.locator("#title").fill("sabah saat 10-da Ramizlə görüş");
+  await page.getByTestId("create-item").click();
+  await expect(page.getByText(/dəqiqləşdirə bilmədi|couldn't refine/)).toBeVisible();
+  await expect(page.getByTestId("create-all")).toBeEnabled();
+  await page.getByTestId("create-all").click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator('[data-testid="item-row"]').filter({ hasText: /Ramiz/ }).first()).toBeVisible();
+});
