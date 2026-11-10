@@ -1,6 +1,8 @@
 /**
- * Task vs Event rules (brief §5). Pure functions, no I/O.
- *  - Specific clock time → event. No time → task.
+ * Task vs Event rules. Pure functions, no I/O.
+ *  - The type is chosen (by the user, explicit words, or meeting/call → event), NOT by
+ *    whether there is a clock time: a task may have an optional time (deadline/reminder).
+ *  - Tasks never sync to Google. Switching task ↔ event keeps the date and time.
  *  - Event without an end → default duration from settings.
  *  - Task → event creates the Google event; event → task deletes it.
  *  - Editing an event's title/time/notes updates Google; marking done is app-only.
@@ -10,7 +12,7 @@ import type { Item, ItemType, LocalDate, LocalTime } from "./types";
 import type { ItemInput, ItemPatch } from "./schemas";
 
 export class RuleError extends Error {
-  constructor(public code: "event_needs_date" | "event_needs_time", message?: string) {
+  constructor(public code: "event_needs_date" | "event_needs_time" | "time_needs_date", message?: string) {
     super(message ?? code);
   }
 }
@@ -20,16 +22,11 @@ export interface RuleContext {
   defaultEventMinutes: number;
 }
 
-/** Type the app suggests from what we know: a clock time means event. */
-export function suggestType(startTime: string | null | undefined): ItemType {
-  return startTime ? "event" : "task";
-}
-
 export type TimingFields = Pick<Item, "type" | "date" | "start_at" | "end_at" | "all_day">;
 
 /**
  * Normalises the timing part of an item into DB columns.
- * Tasks keep only a date (deadline); events get start_at/end_at in UTC.
+ * Tasks keep a date and an optional time (start_at, no end); events get start_at/end_at in UTC.
  */
 export function resolveTiming(
   input: {
@@ -45,7 +42,9 @@ export function resolveTiming(
   const date = input.date ?? null;
 
   if (input.type === "task") {
-    return { type: "task", date, start_at: null, end_at: null, all_day: false };
+    if (!input.start_time) return { type: "task", date, start_at: null, end_at: null, all_day: false };
+    if (!date) throw new RuleError("time_needs_date");
+    return { type: "task", date, start_at: localToUtcIso(date, input.start_time, ctx.timezone), end_at: null, all_day: false };
   }
 
   if (!date) throw new RuleError("event_needs_date");

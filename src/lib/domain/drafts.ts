@@ -43,10 +43,11 @@ export function draftFromParsed(
   opts: { categories: Category[]; defaultEventMinutes: number; today: string; key: string },
 ): Draft {
   const uncertain = new Set<UncertainField>(p.uncertain_fields);
-  // a specific clock time always makes it an event (brief §5)
-  let type: ItemType = p.start_time ? "event" : p.type;
+  // the type comes from the model (user choice, explicit words, meeting/call → event);
+  // a clock time alone does NOT make an event: tasks may have a time
+  let type: ItemType = p.type;
   let date = p.date;
-  let start = p.start_time;
+  const start = p.start_time;
   let end: string | null = null;
 
   if (type === "event" && !start) {
@@ -55,15 +56,11 @@ export function draftFromParsed(
     uncertain.add("time");
     uncertain.add("type");
   }
-  if (type === "event") {
-    if (!date) {
-      date = opts.today;
-      uncertain.add("date");
-    }
-    end = p.end_time ?? addMinutesToTime(start!, p.duration_minutes ?? opts.defaultEventMinutes).time;
-  } else {
-    start = null;
+  if (start && !date) {
+    date = opts.today;
+    uncertain.add("date");
   }
+  if (type === "event") end = p.end_time ?? addMinutesToTime(start!, p.duration_minutes ?? opts.defaultEventMinutes).time;
 
   return {
     key: opts.key,
@@ -100,7 +97,7 @@ export function draftToInput(
     title: d.title.trim(),
     notes: d.notes.trim() || null,
     date: d.date,
-    start_time: d.type === "event" ? d.start : null,
+    start_time: d.start,
     end_time: d.type === "event" ? d.end : null,
     priority: d.priority,
     category_id: d.categoryId,
@@ -110,9 +107,11 @@ export function draftToInput(
   };
 }
 
-/** A draft can be saved when it has a title and, for events, a date and time. */
+/** A draft can be saved when it has a title, a date for any time, and for events a date and time. */
 export function draftIsValid(d: Draft) {
-  return d.title.trim().length > 0 && (d.type === "task" || Boolean(d.date && d.start));
+  if (!d.title.trim()) return false;
+  if (d.start && !d.date) return false;
+  return d.type === "task" || Boolean(d.date && d.start);
 }
 
 /** Fields the user set by hand in the form; they always win over what the AI suggested. */
@@ -135,19 +134,12 @@ export function applyManualChoices(d: Draft, m: ManualChoices): Draft {
     resolve("date");
   }
   if (m.touched.has("time")) {
-    if (m.start) {
-      Object.assign(out, { type: "event", start: m.start, end: m.end, date: out.date ?? m.date });
-    } else {
-      Object.assign(out, { type: "task", start: null, end: null });
-    }
-    resolve("time", "type");
-  } else if (m.touched.has("type")) {
-    // switching to Event only works with a time; keep the AI's time if it found one
-    if (m.type === "task") Object.assign(out, { type: "task", start: null, end: null });
-    else if (out.start) out.type = "event";
-    resolve("type");
+    // a time set by hand is kept as is; it no longer decides the type
+    Object.assign(out, { start: m.start, end: m.start && out.type === "event" ? m.end : null, date: m.start ? (out.date ?? m.date) : out.date });
+    resolve("time");
   }
-  if (m.touched.has("category")) {
+  if (m.touched.has("type")) Object.assign(out, withType(out, m.type));
+  if (m.touched.has("type")) resolve("type");  if (m.touched.has("category")) {
     out.categoryId = m.categoryId;
     resolve("category");
   }
@@ -156,5 +148,16 @@ export function applyManualChoices(d: Draft, m: ManualChoices): Draft {
     resolve("priority");
   }
   if (m.touched.has("notes") && m.notes.trim()) out.notes = m.notes;
+  return out;
+}
+
+/**
+ * The draft as the given type, keeping its date and time. An event without a time stays an
+ * event (the user chose it) with the time flagged, so it can't be saved until a time is set.
+ */
+export function withType(d: Draft, type: ItemType): Draft {
+  const out: Draft = { ...d, type, uncertain: d.uncertain.filter((u) => u !== "type") };
+  if (type === "task") out.end = null;
+  else if (!d.start && !out.uncertain.includes("time")) out.uncertain = [...out.uncertain, "time"];
   return out;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyPatch, buildNewItem, isOverdue, planSync, resolveTiming, RuleError, suggestType } from "@/lib/domain/rules";
+import { applyPatch, buildNewItem, isOverdue, planSync, resolveTiming, RuleError } from "@/lib/domain/rules";
 import type { Item } from "@/lib/domain/types";
 import { itemInputSchema } from "@/lib/domain/schemas";
 
@@ -14,17 +14,15 @@ function item(over: Partial<Item> = {}): Item {
   };
 }
 
-describe("suggestType", () => {
-  it("time → event, no time → task", () => {
-    expect(suggestType("10:00")).toBe("event");
-    expect(suggestType(null)).toBe("task");
-  });
-});
-
 describe("resolveTiming", () => {
-  it("tasks keep only the date", () => {
-    expect(resolveTiming({ type: "task", date: "2026-11-13", start_time: "10:00" }, ctx)).toEqual({
-      type: "task", date: "2026-11-13", start_at: null, end_at: null, all_day: false,
+  it("tasks keep the date and an optional time (no end, no Google sync)", () => {
+    expect(resolveTiming({ type: "task", date: "2026-11-13", start_time: "10:00", end_time: "11:00" }, ctx)).toEqual({
+      type: "task", date: "2026-11-13", start_at: "2026-11-13T06:00:00.000Z", end_at: null, all_day: false,
+    });
+    expect(resolveTiming({ type: "task", date: "2026-11-13" }, ctx)).toMatchObject({ start_at: null, end_at: null });
+    expect(() => resolveTiming({ type: "task", date: null, start_time: "10:00" }, ctx)).toThrow(RuleError);
+    expect(buildNewItem(itemInputSchema.parse({ type: "task", title: "Dərman iç", date: "2026-11-13", start_time: "17:00", priority: "medium", source: "manual" }), ctx)).toMatchObject({
+      type: "task", start_at: "2026-11-13T13:00:00.000Z", sync_status: "none",
     });
   });
   it("events without an end get the default duration", () => {
@@ -69,9 +67,18 @@ describe("applyPatch", () => {
     expect(p.start_at).toBe("2026-11-10T10:00:00.000Z");
     expect(p.end_at).toBe("2026-11-10T10:30:00.000Z");
   });
-  it("event → task drops the time slot", () => {
+  it("event → task keeps the date and the start time (no end)", () => {
     const p = applyPatch(ev, { type: "task" }, ctx);
-    expect(p).toMatchObject({ type: "task", date: "2026-11-10", start_at: null, end_at: null });
+    expect(p).toMatchObject({ type: "task", date: "2026-11-10", start_at: ev.start_at, end_at: null });
+  });
+  it("task with a time → event keeps date and time and gets the default length", () => {
+    const task = item({ date: "2026-11-10", start_at: "2026-11-10T14:00:00.000Z" });
+    expect(applyPatch(task, { type: "event" }, ctx)).toMatchObject({
+      type: "event", date: "2026-11-10", start_at: "2026-11-10T14:00:00.000Z", end_at: "2026-11-10T15:00:00.000Z",
+    });
+  });
+  it("a task with a time never syncs to Google", () => {
+    expect(planSync(null, item({ type: "task", date: "2026-11-10", start_at: "2026-11-10T14:00:00.000Z" }))).toBe("none");
   });
   it("task → event needs a time", () => {
     expect(() => applyPatch(item({ date: "2026-11-10" }), { type: "event" }, ctx)).toThrow(RuleError);

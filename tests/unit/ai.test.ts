@@ -121,10 +121,15 @@ describe("parseWithRetry", () => {
 });
 
 describe("draft mapping rules", () => {
-  it("a clock time makes it an event even if the model said task", () => {
+  it("a task with a clock time stays a task and keeps the time (no end)", () => {
     const [d] = draftsFromResult({ items: [p({ type: "task", title: "X", date: "2026-11-10", start_time: "09:00" })] }, opts);
-    expect(d.type).toBe("event");
-    expect(d.end).toBe("10:00");
+    expect(d).toMatchObject({ type: "task", start: "09:00", end: null });
+    expect(draftToInput(d, { source: "voice", transcript: null, language: null })).toMatchObject({ type: "task", start_time: "09:00", end_time: null });
+  });
+  it("a task with a time but no date gets today, flagged", () => {
+    const [d] = draftsFromResult({ items: [p({ type: "task", title: "X", start_time: "09:00" })] }, opts);
+    expect(d.date).toBe(opts.today);
+    expect(d.uncertain).toContain("date");
   });
   it("an event without a time falls back to task and flags it", () => {
     const [d] = draftsFromResult({ items: [p({ type: "event", title: "X", date: "2026-11-10" })] }, opts);

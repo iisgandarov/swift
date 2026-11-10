@@ -154,12 +154,18 @@ describe("manual choices win over the AI", () => {
     expect(out).toMatchObject({ date: "2026-11-12", priority: "high", start: "10:00", type: "event", categoryId: catId("EduPo") });
     expect(out.uncertain).not.toContain("date");
   });
-  it("clearing the time by hand makes it a task", () => {
+  it("clearing the time by hand keeps the type (an event without time must then get one)", () => {
     const out = applyManualChoices(d, { ...base, touched: new Set(["time"] as const) });
-    expect(out).toMatchObject({ type: "task", start: null, end: null });
+    expect(out).toMatchObject({ type: "event", start: null, end: null });
   });
-  it("a manual time makes it an event at that time", () => {
+  it("a manual time on a task keeps it a task, with that time", () => {
     const out = applyManualChoices({ ...d, type: "task", start: null, end: null }, { ...base, touched: new Set(["time"] as const), start: "18:00", end: "19:00", date: "2026-11-11" });
-    expect(out).toMatchObject({ type: "event", start: "18:00", end: "19:00", date: "2026-11-10" });
+    expect(out).toMatchObject({ type: "task", start: "18:00", end: null, date: "2026-11-10" });
+  });
+  it("a chosen type wins and keeps date and time", () => {
+    expect(applyManualChoices(d, { ...base, touched: new Set(["type"] as const), type: "task" })).toMatchObject({ type: "task", date: "2026-11-10", start: "10:00", end: null });
+    const ev = applyManualChoices({ ...d, type: "task", start: null, end: null }, { ...base, touched: new Set(["type"] as const), type: "event" });
+    expect(ev.type).toBe("event");
+    expect(ev.uncertain).toContain("time"); // can't be saved until a time is set
   });
 });

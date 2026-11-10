@@ -17,6 +17,7 @@ const ALLOWED = /^audio\/(wav|x-wav|wave|webm|mp4|m4a|x-m4a|aac|mpeg|mp3|ogg|fla
 const metaSchema = z.object({
   lang: z.enum(["auto", "az", "en"]).default("auto"),
   duration: z.coerce.number().min(0).max(MAX_SECONDS * 1000),
+  type: z.enum(["task", "event"]).optional(),
 });
 
 /** Audio → { transcript, detected_language, items, clarification } in ONE model call (retried once). */
@@ -34,12 +35,13 @@ export const POST = withAuth(async (ctx, req) => {
   if (audio.size > MAX_BYTES) throw new HttpError(413, "audio_too_large");
   const mimeType = audio.type.split(";")[0] || "audio/wav";
   if (!ALLOWED.test(mimeType)) throw new HttpError(415, "unsupported_audio");
-  const meta = metaSchema.parse({ lang: form.get("lang") ?? undefined, duration: form.get("duration") ?? 0 });
+  const meta = metaSchema.parse({ lang: form.get("lang") ?? undefined, duration: form.get("duration") ?? 0, type: form.get("type") || undefined });
 
-  const [, parseCtx] = await Promise.all([
+  const [, baseCtx] = await Promise.all([
     timing.time("rate", enforceAiRateLimit(ctx.repo, "voice")),
     timing.time("context", buildParseContext(ctx)),
   ]);
+  const parseCtx = { ...baseCtx, preferredType: meta.type };
   const base64 = Buffer.from(await audio.arrayBuffer()).toString("base64");
   timing.add("audio_kb", audio.size / 1024, mimeType);
   let provider: AiProvider | null = null;

@@ -90,6 +90,8 @@ export interface ParseContext {
   uiLocale: "az" | "en";
   categories: string[];
   defaultEventMinutes: number;
+  /** the user picked Task or Event before typing/speaking: every item must be that type */
+  preferredType?: "task" | "event";
 }
 
 export interface AudioInput {

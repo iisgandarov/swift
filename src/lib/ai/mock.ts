@@ -1,5 +1,5 @@
 import { addDays, startOfWeek, weekdayIndex } from "@/lib/dates";
-import { categoryNameFor } from "@/lib/domain/categorize";
+import { bucketFor, categoryNameFor } from "@/lib/domain/categorize";
 import type { AiProvider, AudioInput, ParseContext, ParseResult, ParsedItem } from "./schema";
 
 /**
@@ -87,7 +87,19 @@ function parseOne(raw: string, ctx: ParseContext, carryDate: string | null): Par
   const category = categoryNameFor(raw, ctx.categories);
 
   // title: drop date/time words and filler, keep the rest
-  let title = s.replace(/(\p{L}+?)(məliyəm|malıyam)\b/gu, "$1");
+  // type: the user's choice → explicit word → meeting / call / plan with a person → task
+  const explicitTask = /(?<!\p{L})(tapşırıq|task)(?!\p{L})/u.test(s);
+  const explicitEvent = /(?<!\p{L})(tədbir|event)(?!\p{L})/u.test(s);
+  const withPerson = /(?<!\p{L})(ilə|with)(?!\p{L})/u.test(s) || /(?<!\p{L})\p{Lu}\p{Ll}+(lə|la)(?!\p{L})/u.test(raw) || /(?<!\p{L})(anam|atam|dost\p{L}*|ailə\p{L}*|qardaş\p{L}*|bacı\p{L}*)(la|lə)(?!\p{L})/u.test(s);
+  const isEvent = ctx.preferredType
+    ? ctx.preferredType === "event"
+    : explicitTask
+      ? false
+      : explicitEvent || bucketFor(raw) === "meeting" || withPerson;
+
+  let title = s
+    .replace(/(?<!\p{L})(tapşırıq|tədbir|task|event)( kimi| olaraq)?:?(?!\p{L})/gu, " ")
+    .replace(/(\p{L}+?)(məliyəm|malıyam)\b/gu, "$1");
   for (const re of FILLER) title = title.replace(re, " ");
   title = title
     .replace(/\b(bu gün|sabah|birigün|tomorrow|today|day after tomorrow|bu axşam|tonight|gələn|next|this|by|on|at)\b/g, " ")
@@ -117,7 +129,8 @@ function parseOne(raw: string, ctx: ParseContext, carryDate: string | null): Par
     if (!uncertain.includes("time")) uncertain.push("time");
   }
   return {
-    type: start ? "event" : "task",
+    // a time alone doesn't make an event; an event without a time is flagged by the draft
+    type: isEvent ? "event" : "task",
     title: finalTitle,
     notes: /afternoon|günortadan sonra/.test(s) && !start ? (ctx.uiLocale === "az" ? "günortadan sonra" : "afternoon") : null,
     date: effectiveDate,
