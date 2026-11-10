@@ -17,7 +17,7 @@ export async function toWav16k(blob: Blob): Promise<Blob | null> {
     src.buffer = decoded;
     src.connect(offline.destination); // down-mixes to mono
     src.start();
-    const pcm = (await offline.startRendering()).getChannelData(0);
+    const pcm = trimSilence((await offline.startRendering()).getChannelData(0), rate);
 
     const buf = new ArrayBuffer(44 + pcm.length * 2);
     const v = new DataView(buf);
@@ -43,4 +43,26 @@ export async function toWav16k(blob: Blob): Promise<Blob | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Cuts the silence before the first and after the last speech (the pause while the phone
+ * starts listening and before tapping stop), keeping 300 ms of padding. Smaller upload and
+ * fewer audio tokens for the model; the spoken part is untouched. Never trims to nothing.
+ */
+export function trimSilence(pcm: Float32Array, rate: number, threshold = 0.02, padMs = 300): Float32Array {
+  const win = Math.max(1, Math.round(rate * 0.02)); // 20 ms windows
+  const loud = (start: number) => {
+    let sum = 0;
+    const end = Math.min(pcm.length, start + win);
+    for (let i = start; i < end; i++) sum += pcm[i] * pcm[i];
+    return Math.sqrt(sum / Math.max(1, end - start)) >= threshold;
+  };
+  let first = -1;
+  for (let i = 0; i < pcm.length; i += win) if (loud(i)) { first = i; break; }
+  if (first === -1) return pcm; // no speech detected: leave as is, the model decides
+  let last = first;
+  for (let i = Math.floor((pcm.length - 1) / win) * win; i >= first; i -= win) if (loud(i)) { last = i + win; break; }
+  const pad = Math.round((rate * padMs) / 1000);
+  return pcm.subarray(Math.max(0, first - pad), Math.min(pcm.length, last + pad));
 }
