@@ -37,18 +37,22 @@ ${dateTable(ctx.localDate)}
 - Times: "20:30", "20.30", "20.30da", "20:30-da", "saat 20:30" → 20:30; "9:05" → 09:05; "saat 8-də", "8-də", "10-da", "7de" = that hour; "8 tamamda" = 8:00 sharp. "səhər 9" = 09:00, "günorta" = 12:00, "günortadan sonra 3" = 15:00, "axşam 7" = 19:00, "gecə 11" = 23:00. "3-ün yarısı" = 2:30, "4-ə 15 dəqiqə qalmış" = 3:45. Bare hour without part of day: 1–6 → PM, 7–11 → AM, 12 → 12:00; if the sentence mentions the evening, 1–11 → PM; when guessing, lower confidence and add "time" to uncertain_fields. No day given and that time today is already past Now: a bare morning hour becomes the evening if still ahead (at 17:20 "saat 7" = 19:00 today), otherwise use tomorrow; add "time" to uncertain_fields. English "3pm", "noon", "half past 4" as usual.
 - Durations: "yarım saat" = 30, "1 saatlıq" = 60, "1.5 saat" = 90, "2 saatlıq" = 120 min.
 - Priority high: "təcili(dir)", "vacib(dir)", "mütləq", "urgent", "ASAP", "important"; low: "tələsmədən", "nə vaxt olsa", "whenever", "low priority"; else medium.
-- Category: one of the user's names when clearly matching (EduPo → "EduPo", TLB → "TLB Academy", görüş/meeting/call with someone → meeting category, idman/gym/family → personal), else null.
+- Category: ALWAYS exactly one of the user's category names, never null. In this order: (1) a custom category whose name clearly matches (EduPo → "EduPo", TLB → "TLB Academy"); (2) a meeting, or a call / zəng with a person → the Meeting category ("Görüş"/"Meeting"); (3) work-related (iş, ofis, hesabat, layihə, müştəri, təqdimat, müqavilə, report, project, presentation, client, deadline…) → Work ("İş"/"Work"); (4) everything else → Personal ("Şəxsi"/"Personal").
 - detected_language: Azerbaijani with English words is still "az".
 - confidence 0..1. If ambiguous: clarification (one short sentence, user's language) + uncertain_fields. Nothing actionable → items [] and top-level clarification.
 
 ## Examples (Now = 2026-11-09 10:00 Monday; categories "İş", "Görüş", "Şəxsi", "EduPo", "TLB Academy"; other fields as usual)
 1. "Sabah saat 10-da Ramizlə EduPo demo görüşü" → event "EduPo demo — Ramiz", 2026-11-10 10:00, category EduPo
-2. "Cümə gününə qədər Power BI hesabatını bitirməliyəm, təcilidir" → task "Power BI hesabatını bitir", 2026-11-13, no time, high
-3. "Remind me to call the bank tomorrow afternoon" → task "Call the bank", 2026-11-10, no time, notes "afternoon"
-4. "Çərşənbə axşamı 3-də müştəri zəngi, yarım saatlıq, sonra da TLB üçün post yazmaq" → event "Müştəri zəngi" 2026-11-10 15:00–15:30 (30 min) + task "TLB postunu yaz" 2026-11-10, TLB Academy
+2. "Cümə gününə qədər Power BI hesabatını bitirməliyəm, təcilidir" → task "Power BI hesabatını bitir", 2026-11-13, no time, high, İş
+3. "Remind me to call the bank tomorrow afternoon" → task "Call the bank", 2026-11-10, no time, notes "afternoon", Şəxsi
+4. "Çərşənbə axşamı 3-də müştəri zəngi, yarım saatlıq, sonra da TLB üçün post yazmaq" → event "Müştəri zəngi" 2026-11-10 15:00–15:30 (30 min), Görüş + task "TLB postunu yaz" 2026-11-10, TLB Academy
 5. "Next Friday 7pm dinner with family" → event "Family dinner", 2026-11-20 19:00, Şəxsi
 6. "Axşama görüş olacaq onu qeyd et Dostlarla görüş saat 20.30da" → ONE event "Dostlarla görüş", 2026-11-09 20:30, Görüş
 7. "Sabah saat 10-da Ramizlə EduPo demo görüşü, bir də cümə gününə qədər Power BI hesabatını bitir, təcilidir" → event "EduPo demo — Ramiz" 2026-11-10 10:00 EduPo + task "Power BI hesabatını bitir" 2026-11-13 high
+8. "Ofisdə layihə təqdimatını hazırla" → task "Layihə təqdimatını hazırla", İş
+9. "Anamla zəng saat 6-da" → event "Anamla zəng", 18:00, Görüş
+10. "Dərman al" → task "Dərman al", Şəxsi
+11. "Send the report to the client by Friday" → task "Send the report to the client", 2026-11-13, İş
 (Use the real category names, e.g. "Personal" when categories are in English.)`;
 }
 

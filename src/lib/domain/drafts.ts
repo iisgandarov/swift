@@ -6,6 +6,7 @@ import { addMinutesToTime } from "@/lib/dates";
 import type { ParsedItem, ParseResult } from "@/lib/ai/schema";
 import type { Category, ItemType, Priority } from "./types";
 import type { ItemInput } from "./schemas";
+import { categoryNameFor } from "./categorize";
 
 export type UncertainField = ParsedItem["uncertain_fields"][number];
 
@@ -73,7 +74,10 @@ export function draftFromParsed(
     start,
     end,
     priority: p.priority,
-    categoryId: matchCategory(p.category, opts.categories),
+    // never empty: the AI's choice, else the same rules on the item's own words
+    categoryId:
+      matchCategory(p.category, opts.categories) ??
+      matchCategory(categoryNameFor(`${p.title} ${p.notes ?? ""}`, opts.categories.flatMap((c) => [c.name_az, c.name_en])), opts.categories),
     confidence: p.confidence,
     clarification: p.clarification,
     uncertain: [...uncertain],

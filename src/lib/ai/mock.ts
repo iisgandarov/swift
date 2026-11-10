@@ -1,4 +1,5 @@
 import { addDays, startOfWeek, weekdayIndex } from "@/lib/dates";
+import { categoryNameFor } from "@/lib/domain/categorize";
 import type { AiProvider, AudioInput, ParseContext, ParseResult, ParsedItem } from "./schema";
 
 /**
@@ -82,12 +83,8 @@ function parseOne(raw: string, ctx: ParseContext, carryDate: string | null): Par
   else if (/(1|bir) saatlıq|one hour|1 hour/.test(s)) duration = 60;
 
   const priority: ParsedItem["priority"] = /təcili|vacib|mütləq|urgent|asap|important/.test(s) ? "high" : "medium";
-  // specific project names win over generic ones like "Görüş"/"Meeting"
-  const GENERIC = new Set(["iş", "work", "görüş", "meeting", "şəxsi", "personal"]);
-  const matches = ctx.categories.filter(
-    (c) => s.includes(c.toLocaleLowerCase("az")) || (c === "TLB Academy" && /\btlb\b/.test(s)),
-  );
-  const category = matches.find((c) => !GENERIC.has(c.toLocaleLowerCase("az"))) ?? matches[0] ?? null;
+  // every item gets a category: own category by name, else Meeting / Work / Personal
+  const category = categoryNameFor(raw, ctx.categories);
 
   // title: drop date/time words and filler, keep the rest
   let title = s.replace(/(\p{L}+?)(məliyəm|malıyam)\b/gu, "$1");

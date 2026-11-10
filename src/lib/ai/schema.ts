@@ -59,7 +59,7 @@ export const parseResultJsonSchema = {
           duration_minutes: { type: ["integer", "null"] },
           all_day: { type: "boolean" },
           priority: { type: "string", enum: ["low", "medium", "high"] },
-          category: { type: ["string", "null"], description: "Exactly one of the user's category names, or null." },
+          category: { type: ["string", "null"], description: "Exactly one of the user's category names. Never null: Meeting, Work or Personal when nothing more specific fits." },
           confidence: { type: "number" },
           clarification: { type: ["string", "null"] },
           uncertain_fields: { type: "array", items: { type: "string", enum: [...UNCERTAIN_FIELDS] } },
