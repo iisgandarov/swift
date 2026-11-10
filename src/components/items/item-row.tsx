@@ -90,23 +90,19 @@ export function ItemRow(props: ItemRowProps) {
             {item.title}
           </p>
           {hasMeta && (
-          <div className="mt-1.5 flex items-center justify-between gap-2">
-            {(when || overdue || item.type === "event") && (
-            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-5 text-muted">
+            <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-5 text-muted">
               {(when || overdue) && (
                 <span className="flex items-center gap-1.5 tabular-nums">
                   <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: PRIORITY_DOT[item.priority] }} />
                   {when && <span className={cn(done && "line-through")}>{when}</span>}
                 </span>
               )}
+              {category && <CategoryChip category={category} locale={locale} size="sm" className="shrink-0" />}
               {overdue && (
                 <span className="rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-semibold text-danger">{t("state.overdue")}</span>
               )}
               {item.type === "event" && <SyncBadge item={item} onRetry={() => onRetrySync(item)} />}
             </div>
-            )}
-            {category && <CategoryChip category={category} locale={locale} className="shrink-0" />}
-          </div>
           )}
         </div>
 
