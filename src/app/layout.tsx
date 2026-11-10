@@ -27,10 +27,11 @@ export async function generateMetadata(): Promise<Metadata> {
     formatDetection: { telephone: false },
     icons: {
       icon: [
-        { url: "/icons/icon.svg", type: "image/svg+xml" },
-        { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+        { url: "/icons/swift-16.png", sizes: "16x16", type: "image/png" },
+        { url: "/icons/swift-32.png", sizes: "32x32", type: "image/png" },
+        { url: "/icons/swift-48.png", sizes: "48x48", type: "image/png" },
       ],
-      apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+      apple: [{ url: "/icons/swift-apple-180.png", sizes: "180x180" }],
     },
     other: { "mobile-web-app-capable": "yes" },
   };

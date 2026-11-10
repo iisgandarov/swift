@@ -14,7 +14,7 @@ export function Sidebar({ active: activeTab }: { active: TabKey | null }) {
   return (
     <aside className="chrome sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-line bg-surface/60 px-4 py-6 backdrop-blur-xl lg:flex">
       <Link href="/" className="mb-8 flex items-center gap-3 px-2">
-        <Image src="/icons/icon.svg" alt="" width={40} height={40} className="rounded-[11px]" priority />
+        <Image src="/icons/swift-logo-256.png" alt="" width={40} height={40} className="rounded-[11px]" priority />
         <div className="leading-tight">
           <div className="text-xl font-bold tracking-tight">Swift</div>
           <div className="text-[10px] font-medium uppercase tracking-[0.3em] text-muted">{t("app.subtitle")}</div>

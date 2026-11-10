@@ -16,13 +16,14 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "az",
     categories: ["productivity"],
     icons: [
-      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/icons/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/icons/swift-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icons/swift-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/icons/swift-maskable-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+      { src: "/icons/swift-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     shortcuts: [
-      { name: "Text task", short_name: "Text", url: "/new/text", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
-      { name: "Voice task", short_name: "Voice", url: "/new/voice", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+      { name: "Text task", short_name: "Text", url: "/new/text", icons: [{ src: "/icons/swift-192.png", sizes: "192x192" }] },
+      { name: "Voice task", short_name: "Voice", url: "/new/voice", icons: [{ src: "/icons/swift-192.png", sizes: "192x192" }] },
     ],
   };
 }

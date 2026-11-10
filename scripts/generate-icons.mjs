@@ -1,88 +1,63 @@
-// Builds the Swift app icon as a clean SVG (text converted to paths so it renders
-// identically everywhere) and rasterises PNG sizes for the manifest / iOS.
+// Exports the app icons from İsrafil's ORIGINAL logo (design/logo-original.png).
+// The artwork itself is never redrawn or altered: the script only trims the empty
+// transparent margin, resizes, and for maskable / iOS icons places the logo on a
+// plain background with safe padding.
 // Usage: node scripts/generate-icons.mjs
 import fs from "node:fs";
 import path from "node:path";
-import opentype from "opentype.js";
 import sharp from "sharp";
 
-const FONT = process.env.INTER_BOLD ?? "/usr/share/fonts/opentype/inter/Inter-Bold.otf";
+const SOURCE = path.resolve("design/logo-original.png");
 const out = path.resolve("public/icons");
 fs.mkdirSync(out, { recursive: true });
 
-const buf = fs.readFileSync(FONT);
-const font = opentype.parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+// trim the transparent margin around the rounded square, then centre it on a square canvas
+const trimmed = await sharp(SOURCE).trim({ threshold: 10 }).png().toBuffer();
+const { width, height } = await sharp(trimmed).metadata();
+const side = Math.max(width, height);
+const square = await sharp(trimmed)
+  .extend({
+    top: Math.floor((side - height) / 2),
+    bottom: Math.ceil((side - height) / 2),
+    left: Math.floor((side - width) / 2),
+    right: Math.ceil((side - width) / 2),
+    background: { r: 0, g: 0, b: 0, alpha: 0 },
+  })
+  .png()
+  .toBuffer();
 
-// Lay out glyphs manually (opentype.js' shaper chokes on Inter's ccmp tables).
-function textPath(text, x, y, size) {
-  const path = new opentype.Path();
-  const scale = size / font.unitsPerEm;
-  let pen = x;
-  const glyphs = [...text].map((c) => font.charToGlyph(c));
-  glyphs.forEach((g, i) => {
-    path.extend(g.getPath(pen, y, size));
-    pen += g.advanceWidth * scale;
-    if (glyphs[i + 1]) pen += font.getKerningValue(g, glyphs[i + 1]) * scale;
-  });
-  return path;
-}
-function wordmark(size, cx, cy) {
-  const bb = textPath("Swift", 0, 0, size).getBoundingBox();
-  const dx = cx - (bb.x1 + bb.x2) / 2;
-  const dy = cy - (bb.y1 + bb.y2) / 2;
-  return textPath("Swift", dx, dy, size).toPathData(2);
-}
+const WHITE = { r: 255, g: 255, b: 255, alpha: 1 };
 
-// Stylised swift: two swept-back wing blades + crescent body with forked tail.
-const bird = `
-  <path d="M140 240 C 330 360 500 480 640 610 L 560 700 C 420 560 270 420 140 240 Z"/>
-  <path d="M250 200 C 430 320 600 440 720 560 L 660 630 C 520 500 370 370 250 200 Z"/>
-  <path d="M520 165 C 720 250 850 430 830 640 C 822 720 790 780 745 820
-           C 800 860 840 920 850 990 C 790 930 720 900 640 905
-           C 520 912 400 960 290 940 C 200 925 150 880 120 830
-           C 230 870 360 870 470 840 C 590 805 660 730 690 620
-           C 720 480 640 300 520 165 Z"/>`;
+/** The logo as is (transparent corners), resized. */
+const plain = (size) => sharp(square).resize(size, size, { kernel: "lanczos3" }).png({ compressionLevel: 9 });
 
-function iconSvg({ maskable = false } = {}) {
-  // maskable icons need full-bleed background and content inside the 80% safe zone
-  const radius = maskable ? 0 : 228;
-  const scale = maskable ? 0.8 : 1;
-  const t = (1 - scale) * 512;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2EA1FF"/>
-      <stop offset="0.55" stop-color="#0A6BFF"/>
-      <stop offset="1" stop-color="#0057FF"/>
-    </linearGradient>
-    <clipPath id="c"><rect width="1024" height="1024" rx="${radius}"/></clipPath>
-  </defs>
-  <g clip-path="url(#c)">
-    <rect width="1024" height="1024" fill="url(#g)"/>
-    <g transform="translate(${t} ${t}) scale(${scale})">
-      <g fill="#9CCBFF" fill-opacity="0.38">${bird}</g>
-      <path fill="#FFFFFF" d="${wordmark(300, 512, 540)}"/>
-    </g>
-  </g>
-</svg>`;
+/** The logo scaled to `scale` of the canvas, centred on a solid background (maskable / iOS). */
+async function padded(size, scale) {
+  const inner = Math.round(size * scale);
+  const logo = await sharp(square).resize(inner, inner, { kernel: "lanczos3" }).png().toBuffer();
+  return sharp({ create: { width: size, height: size, channels: 4, background: WHITE } })
+    .composite([{ input: logo, gravity: "center" }])
+    .flatten({ background: WHITE })
+    .png({ compressionLevel: 9 });
 }
 
-const svg = iconSvg();
-const maskable = iconSvg({ maskable: true });
-fs.writeFileSync(path.join(out, "icon.svg"), svg);
-fs.writeFileSync(path.join(out, "icon-maskable.svg"), maskable);
-
+// New file names on purpose: the service worker serves /icons/* cache-first, so reusing the
+// old names would keep showing the old icon on devices that already have the app.
 const jobs = [
-  ["icon-192.png", svg, 192],
-  ["icon-512.png", svg, 512],
-  ["icon-maskable-512.png", maskable, 512],
-  ["apple-touch-icon.png", maskable, 180], // iOS rounds corners itself → full bleed
-  ["favicon-32.png", svg, 32],
+  ["swift-192.png", plain(192)],
+  ["swift-512.png", plain(512)],
+  // maskable: the launcher may crop to a circle — keep the logo inside the 80% safe zone
+  ["swift-maskable-192.png", await padded(192, 0.8)],
+  ["swift-maskable-512.png", await padded(512, 0.8)],
+  // iOS has no transparency and rounds the corners itself: small white margin, no black corners
+  ["swift-apple-180.png", await padded(180, 0.92)],
+  ["swift-16.png", plain(16)],
+  ["swift-32.png", plain(32)],
+  ["swift-48.png", plain(48)],
+  // in-app header / sign-in screen (shown at 40–96 px, 2–3× screens)
+  ["swift-logo-256.png", plain(256)],
+  // precached by the service worker under this name: keep it, with the real logo
+  ["icon-192.png", plain(192)],
 ];
-for (const [name, src, size] of jobs) {
-  await sharp(Buffer.from(src)).resize(size, size).png().toFile(path.join(out, name));
-}
-// Simple wordmark (dark text) for login screen / desktop sidebar
-fs.writeFileSync(path.join(out, "bird.svg"),
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="100 150 780 860" fill="currentColor">${bird}</svg>`);
-console.log("icons written to", out);
+for (const [name, img] of jobs) await img.toFile(path.join(out, name));
+console.log(`exported ${jobs.length} icons from ${path.relative(process.cwd(), SOURCE)}`);
