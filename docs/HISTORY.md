@@ -222,6 +222,16 @@ He sent six items and asked for "commit after each, push at the end, short repor
 
 ---
 
+## Phase 8 — Tasks with a time, chosen type (2026-11-10, `c43899b` … `9935e9b`)
+
+- **Removed** Settings → Speed and the client timing log (`c43899b`); `/api/ai/test` stays.
+- **Tasks can have a time** (`767fd56`, `9f58602`): optional deadline/reminder time (`start_at`, no end), never synced to Google. No DB change. A clock time no longer makes an event.
+- **Type order** (prompt + on-device parser): the user's choice (text form, or Auto / Task / Event on the voice screen and in the recording overlay) → "tapşırıq/task" or "tədbir/event" → meeting, call/zəng, plan with someone ("X ilə", "Ramizlə", "with X") → event; else task. He confirmed "X ilə" counts as an event.
+- **Appointments and fixed-time activities are events** (`9935e9b`): qəbul/həkim/appointment, dərs/kurs/class/lesson, uçuş/flight, müsahibə/interview, vebinar/webinar, konsert/concert, təlim/training, toy/ad günü/party. Azerbaijani words match with case endings only ("toyuq", "kursor", "dərslik" stay tasks).
+- **Switching Task ↔ Event keeps date and time** in the form and the confirmation card; an event gets the default length back.
+
+---
+
 ## Rejected or replaced options (summary)
 
 | Option | Outcome | Why |
