@@ -17,7 +17,7 @@ const AZ_WEEKDAYS: [RegExp, number][] = [
 const EN_WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
 const FILLER = [
-  /xatırlat ki/g, /yadıma sal/g, /yadımda saxla/g, /remind me to/g, /i need to/g, /don't forget to/g, /lazımdır/g,
+  /xatırlat ki/g, /yadıma sal/g, /\bolacaq\b/g, /\bqeyd et\b/g, /\bonu\b/g, /yadımda saxla/g, /remind me to/g, /i need to/g, /don't forget to/g, /lazımdır/g,
   /,?\s*(təcilidir|təcili|vacibdir|vacib|mütləq|urgent|asap|it's urgent|important)/g,
 ];
 
@@ -58,7 +58,9 @@ function parseOne(raw: string, ctx: ParseContext, carryDate: string | null): Par
   // times
   const ampm = s.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/);
   // \b doesn't work after Azerbaijani letters (ə, ü), so use an explicit end lookahead
-  const az = s.match(/(?:saat\s*)?(\d{1,2})(?::(\d{2}))?-?(?:da|də|ə|a|ün|un)(?=[\s,.]|$)/) ?? s.match(/saat\s*(\d{1,2})(?::(\d{2}))?/);
+  // "-də/-da" is often typed with a Latin "e" ("7de") — accept both
+  const az = s.match(/(?:saat\s*)?(\d{1,2})(?:[:.](\d{2}))?-?(?:da|də|de|ə|e|a|ün|un)(?=[\s,.]|$)/) ?? s.match(/saat\s*(\d{1,2})(?:[:.](\d{2}))?/);
+  let bareMorning = false; // an hour 7–11 read as morning only because nothing said otherwise
   if (ampm) {
     let h = Number(ampm[1]) % 12;
     if (ampm[3] === "pm") h += 12;
@@ -66,11 +68,12 @@ function parseOne(raw: string, ctx: ParseContext, carryDate: string | null): Par
   } else if (az) {
     let h = Number(az[1]);
     const evening = /axşam|gecə|günortadan sonra|evening|tonight/.test(s);
+    const morning = /səhər|morning/.test(s);
     if (evening && h < 12) h += 12;
-    else if (!/səhər|morning/.test(s) && h >= 1 && h <= 6) {
+    else if (!morning && h >= 1 && h <= 6) {
       h += 12;
       uncertain.push("time");
-    }
+    } else if (!morning && h >= 7 && h <= 11) bareMorning = true;
     start = `${String(h).padStart(2, "0")}:${az[2] ?? "00"}`;
   } else if (/\bgünorta\b|\bnoon\b/.test(s)) {
     start = "12:00";
@@ -91,7 +94,7 @@ function parseOne(raw: string, ctx: ParseContext, carryDate: string | null): Par
   for (const re of FILLER) title = title.replace(re, " ");
   title = title
     .replace(/\b(bu gün|sabah|birigün|tomorrow|today|day after tomorrow|bu axşam|tonight|gələn|next|this|by|on|at)\b/g, " ")
-    .replace(/(saat\s*)?\d{1,2}(:\d{2})?\s*(am|pm|-?(da|də|ə|a|ün|un))?(?=[\s,.]|$)/g, " ")
+    .replace(/(saat\s*)?\d{1,2}([:.]\d{2})?\s*(am|pm|-?(da|də|de|ə|e|a|ün|un))?(?=[\s,.]|$)/g, " ")
     .replace(/\b(səhər|axşam|gecə|günortadan sonra|günorta|afternoon|morning|evening)\b/g, " ")
     .replace(/\b(yarım saatlıq|yarım saat|bir saatlıq|1 saatlıq|half an hour|one hour)\b/g, " ")
     .replace(/\b(gününə qədər|qədər)\b/g, " ")
@@ -106,7 +109,16 @@ function parseOne(raw: string, ctx: ParseContext, carryDate: string | null): Par
     .join(" ");
   const finalTitle = words ? words[0].toLocaleUpperCase(ctx.uiLocale === "az" ? "az" : "en") + words.slice(1) : raw.trim();
 
-  const effectiveDate = date ?? (start ? carryDate ?? today : carryDate);
+  let effectiveDate = date ?? (start ? carryDate ?? today : carryDate);
+  // no day given and that time is already past today: a bare morning hour means the evening
+  // if that is still ahead ("saat 7" at 17:20 → 19:00), otherwise it is tomorrow
+  if (start && !date && !carryDate && ctx.localTime && start <= ctx.localTime) {
+    const [h, m] = start.split(":");
+    const evening = `${String(Number(h) + 12).padStart(2, "0")}:${m}`;
+    if (bareMorning && evening > ctx.localTime) start = evening;
+    else effectiveDate = addDays(today, 1);
+    if (!uncertain.includes("time")) uncertain.push("time");
+  }
   return {
     type: start ? "event" : "task",
     title: finalTitle,

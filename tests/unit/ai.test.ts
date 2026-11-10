@@ -152,9 +152,35 @@ describe("prompt", () => {
     expect(prompt).toContain('"next Friday" = 2026-11-20');
     for (const text of Object.keys(FEW_SHOT)) expect(prompt).toContain(text);
   });
+  it("tells the model what to do with a time already past today", () => {
+    expect(buildSystemPrompt(ctx)).toContain('at 17:20 "saat 7" = 19:00 today');
+  });
 });
 
 describe("offline mock parser (demo mode)", () => {
+  describe("a time already past today (no day given)", () => {
+    const at = (localTime: string) => ({ ...ctx, localTime });
+    it('"saat 7de" at 17:20 → 19:00 today, flagged, clean title', () => {
+      const [i] = mockParse("Ramizle görüş olacaq saat 7de", at("17:20")).items;
+      expect(i).toMatchObject({ type: "event", title: "Ramizle görüş", date: "2026-11-09", start_time: "19:00" });
+      expect(i.uncertain_fields).toContain("time");
+    });
+    it("a bare morning hour after its evening has passed too → tomorrow morning", () => {
+      expect(mockParse("saat 7de görüş", at("21:00")).items[0]).toMatchObject({ date: "2026-11-10", start_time: "07:00" });
+    });
+    it("a time still ahead stays today and is not flagged", () => {
+      const [i] = mockParse("saat 7de görüş", at("06:00")).items;
+      expect(i).toMatchObject({ date: "2026-11-09", start_time: "07:00" });
+      expect(i.uncertain_fields).not.toContain("time");
+    });
+    it("an explicit 24-hour time already past → tomorrow", () => {
+      expect(mockParse("saat 15:00-da zəng", at("17:20")).items[0]).toMatchObject({ date: "2026-11-10", start_time: "15:00" });
+    });
+    it("a named day is kept as said", () => {
+      expect(mockParse("sabah saat 7de görüş", at("17:20")).items[0]).toMatchObject({ date: "2026-11-10", start_time: "07:00" });
+    });
+  });
+
   it("handles the sample sentence with two items", () => {
     const r = mockParse("Sabah saat 10-da Ramizlə EduPo demo görüşü, bir də TLB üçün post yazmaq", ctx);
     expect(r.items).toHaveLength(2);
