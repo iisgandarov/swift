@@ -4,7 +4,8 @@ import { enforceAiRateLimit } from "@/lib/server/rate-limit";
 import { getAiProvider } from "@/lib/ai";
 import { buildParseContext } from "@/lib/ai/context";
 import { AiParseError, parseWithRetry } from "@/lib/ai/parse";
-import { AiProviderError } from "@/lib/ai/schema";
+import { AiProviderError, type AiProvider } from "@/lib/ai/schema";
+import { addAiAttempts, timingFor } from "@/lib/server/timing";
 
 // Gemini calls are capped at 50 s in total (see GeminiProvider), safely inside this limit.
 export const maxDuration = 60;
@@ -12,14 +13,20 @@ const bodySchema = z.object({ text: z.string().trim().min(1).max(2000) });
 
 /** Typed text → items, one model call (retried once). The text is echoed back on failure. */
 export const POST = withAuth(async (ctx, req) => {
+  const timing = timingFor(req);
   const { text } = bodySchema.parse(await readJson(req));
-  await enforceAiRateLimit(ctx.repo, "parse");
+  await timing.time("rate", enforceAiRateLimit(ctx.repo, "parse"));
+  let provider: AiProvider | null = null;
   try {
-    const result = await parseWithRetry(getAiProvider(), text, await buildParseContext(ctx));
+    provider = getAiProvider();
+    const parseCtx = await timing.time("context", buildParseContext(ctx));
+    const result = await timing.time("ai", parseWithRetry(provider, text, parseCtx));
     return json({ ...result, transcript: text });
   } catch (err) {
     if (err instanceof AiParseError) return json({ error: err.code, transcript: text }, err.code === "ai_quota" ? 429 : err.code === "ai_timeout" ? 504 : 502);
     if (err instanceof AiProviderError) return json({ error: "ai_not_configured", transcript: text }, 503);
     throw err;
+  } finally {
+    addAiAttempts(timing, provider);
   }
 });

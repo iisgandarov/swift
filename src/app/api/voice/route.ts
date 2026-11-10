@@ -4,7 +4,8 @@ import { enforceAiRateLimit } from "@/lib/server/rate-limit";
 import { getAiProvider } from "@/lib/ai";
 import { buildParseContext } from "@/lib/ai/context";
 import { AiParseError, parseAudioWithRetry } from "@/lib/ai/parse";
-import { AiProviderError } from "@/lib/ai/schema";
+import { AiProviderError, type AiProvider } from "@/lib/ai/schema";
+import { addAiAttempts, timingFor } from "@/lib/server/timing";
 
 // Gemini calls are capped at 50 s in total (see GeminiProvider), safely inside this limit.
 export const maxDuration = 60;
@@ -20,9 +21,10 @@ const metaSchema = z.object({
 
 /** Audio → { transcript, detected_language, items, clarification } in ONE model call (retried once). */
 export const POST = withAuth(async (ctx, req) => {
+  const timing = timingFor(req);
   let form: FormData;
   try {
-    form = await req.formData();
+    form = await timing.time("upload", req.formData());
   } catch {
     throw new HttpError(400, "invalid_form");
   }
@@ -34,19 +36,23 @@ export const POST = withAuth(async (ctx, req) => {
   if (!ALLOWED.test(mimeType)) throw new HttpError(415, "unsupported_audio");
   const meta = metaSchema.parse({ lang: form.get("lang") ?? undefined, duration: form.get("duration") ?? 0 });
 
-  await enforceAiRateLimit(ctx.repo, "voice");
+  await timing.time("rate", enforceAiRateLimit(ctx.repo, "voice"));
   const base64 = Buffer.from(await audio.arrayBuffer()).toString("base64");
+  timing.add("audio_kb", audio.size / 1024, mimeType);
+  let provider: AiProvider | null = null;
   try {
-    const result = await parseAudioWithRetry(
-      getAiProvider(),
-      { base64, mimeType },
-      await buildParseContext(ctx),
-      meta.lang === "auto" ? undefined : meta.lang,
+    provider = getAiProvider();
+    const parseCtx = await timing.time("context", buildParseContext(ctx));
+    const result = await timing.time(
+      "ai",
+      parseAudioWithRetry(provider, { base64, mimeType }, parseCtx, meta.lang === "auto" ? undefined : meta.lang),
     );
     return json({ ...result, transcript: result.transcript ?? "" });
   } catch (err) {
     if (err instanceof AiParseError) return json({ error: err.code }, err.code === "ai_quota" ? 429 : err.code === "ai_timeout" ? 504 : 502);
     if (err instanceof AiProviderError) return json({ error: "ai_not_configured" }, 503);
     throw err;
+  } finally {
+    addAiAttempts(timing, provider);
   }
 });

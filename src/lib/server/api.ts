@@ -4,6 +4,7 @@ import { ZodError } from "zod";
 import { RuleError } from "@/lib/domain/rules";
 import { getAppContext, type AppContext } from "./context";
 import { NotFoundError } from "./repo";
+import { timingFor } from "./timing";
 
 export class HttpError extends Error {
   constructor(
@@ -24,13 +25,20 @@ type Handler<P> = (ctx: AppContext, req: NextRequest, params: P) => Promise<Resp
 /** Wraps a route handler: requires an allowed signed-in user and maps errors to JSON responses. */
 export function withAuth<P = Record<string, never>>(fn: Handler<P>) {
   return async (req: NextRequest, segment: { params: Promise<P> }) => {
+    const timing = timingFor(req);
+    let res: Response;
     try {
-      const ctx = await getAppContext();
-      if (!ctx) return json({ error: "unauthorized" }, 401);
-      return await fn(ctx, req, await segment.params);
+      const ctx = await timing.time("auth", getAppContext());
+      res = ctx ? await fn(ctx, req, await segment.params) : json({ error: "unauthorized" }, 401);
     } catch (err) {
-      return errorResponse(err);
+      res = errorResponse(err);
     }
+    try {
+      res.headers.set("server-timing", timing.header());
+    } catch {
+      /* immutable headers (e.g. a proxied response): timing is optional */
+    }
+    return res;
   };
 }
 

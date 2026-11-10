@@ -87,10 +87,11 @@ export class GeminiProvider implements AiProvider {
     private readonly apiKey: string = env.geminiKey,
     model: string = env.geminiModel || DEFAULT_GEMINI_MODEL,
     private readonly fetchImpl: typeof fetch = fetch,
-    opts: { budgetMs?: number; callTimeoutMs?: number } = {},
+    opts: { budgetMs?: number; callTimeoutMs?: number; fallback?: boolean } = {},
   ) {
     if (!apiKey) throw new AiProviderError("config", "GEMINI_API_KEY is not set");
-    this.models = [...new Set([model.trim(), ...FALLBACK_GEMINI_MODELS].filter(Boolean))];
+    // fallback: false = only this model (used by the benchmark to compare models fairly)
+    this.models = [...new Set([model.trim(), ...(opts.fallback === false ? [] : FALLBACK_GEMINI_MODELS)].filter(Boolean))];
     this.deadline = Date.now() + (opts.budgetMs ?? BUDGET_MS);
     this.callTimeoutMs = opts.callTimeoutMs ?? CALL_TIMEOUT_MS;
   }
