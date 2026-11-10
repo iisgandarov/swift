@@ -45,7 +45,7 @@ function codeFor(err: unknown): AiErrorCode {
  */
 async function withRetry(
   call: (retryHint?: string) => Promise<string>,
-  sleep: (ms: number) => Promise<unknown> = (ms) => new Promise((r) => setTimeout(r, ms)),
+  sleep: (ms: number) => Promise<unknown> = async () => undefined,
   timeLeft: () => number = () => Infinity,
 ) {
   let last: AiParseError = new AiParseError();
@@ -61,9 +61,10 @@ async function withRetry(
       last = new AiParseError(codeFor(err));
       if (last.code === "ai_not_configured" || last.code === "ai_blocked") throw last; // retrying cannot help
       console.error("[ai]", attempt, err instanceof Error ? err.message : err);
-      // only retry if there is still time for a real answer before the serverless limit
+      // only retry if there is still time for a real answer before the serverless limit;
+      // retry right away — a fixed pause only added to the wait
       if (attempt === 0 && timeLeft() < 10_000) throw last;
-      if (attempt === 0) await sleep(last.code === "ai_quota" ? 1500 : 400);
+      if (attempt === 0) await sleep(0);
     }
   }
   throw last;

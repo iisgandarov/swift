@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { GeminiProvider } from "@/lib/ai/gemini";
+import { beforeEach, describe, expect, it } from "vitest";
+import { GeminiProvider, resetGeminiMemory } from "@/lib/ai/gemini";
 import { AiParseError, parseAudioWithRetry, parseWithRetry } from "@/lib/ai/parse";
 import { AiProviderError, type ParseContext, type ParsedItem } from "@/lib/ai/schema";
 import { applyManualChoices, draftsFromResult, draftToInput } from "@/lib/domain/drafts";
@@ -16,6 +16,7 @@ const ctx: ParseContext = {
   weekday: "Monday", uiLocale: "az", categories: categories.flatMap((c) => [c.name_az, c.name_en]), defaultEventMinutes: 60,
 };
 const noSleep = async () => {};
+beforeEach(() => resetGeminiMemory());
 const rules = { timezone: "Asia/Baku", defaultEventMinutes: 60 };
 
 const item = (o: Partial<ParsedItem> & Pick<ParsedItem, "type" | "title">): ParsedItem => ({

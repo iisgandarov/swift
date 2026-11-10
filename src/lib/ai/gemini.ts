@@ -13,14 +13,41 @@ import {
 /** İsrafil's free-tier model (Gemini 3.1 Flash-Lite). */
 export const DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite";
 /** Tried in this order after GEMINI_MODEL when a model is missing or unavailable for the key. */
-export const FALLBACK_GEMINI_MODELS = [DEFAULT_GEMINI_MODEL, "gemini-flash-latest", "gemini-2.5-flash"];
+export const FALLBACK_GEMINI_MODELS = [DEFAULT_GEMINI_MODEL, "gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-2.5-flash"];
 /** AI Studio (API key) endpoint — not Vertex AI. */
 const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 
 /** Total time one request may spend talking to Google (Vercel route maxDuration is 60 s). */
 const BUDGET_MS = 50_000;
 /** Max time for a single Google call. */
-const CALL_TIMEOUT_MS = 25_000;
+const CALL_TIMEOUT_MS = 15_000;
+/** No answer after this long → send ONE duplicate request and use whichever answers first. */
+const HEDGE_AFTER_MS = { text: 3_000, audio: 4_000 };
+/** Free tier allows ~15 requests/minute: never spend more than this many on duplicates per minute. */
+const MAX_HEDGES_PER_MINUTE = 4;
+/** Upper bound on the answer size: a handful of items (plus the transcript for audio). */
+const MAX_OUTPUT_TOKENS = { text: 1_500, audio: 2_500 };
+/** How long a model that answered "not found / not available" is skipped. */
+const UNAVAILABLE_FOR_MS = 10 * 60_000;
+
+/**
+ * Shared by all requests on a warm server instance: models known to be unavailable for this
+ * key (so the fallback chain isn't walked on every request) and recent hedge timestamps.
+ */
+const memory = { unavailable: new Map<string, number>(), hedges: [] as number[] };
+
+/** Test helper: forget what earlier requests learned. */
+export function resetGeminiMemory() {
+  memory.unavailable.clear();
+  memory.hedges.length = 0;
+}
+
+function takeHedgeSlot(now = Date.now()) {
+  memory.hedges = memory.hedges.filter((t) => now - t < 60_000);
+  if (memory.hedges.length >= MAX_HEDGES_PER_MINUTE) return false;
+  memory.hedges.push(now);
+  return true;
+}
 
 type Part = { text: string } | { inlineData: { mimeType: string; data: string } };
 
@@ -39,6 +66,26 @@ export interface GeminiAttempt {
   error?: string; // Google's exact error message
   thinking: string; // thinking config that was sent
   schema: boolean; // whether responseJsonSchema was sent
+  hedge?: boolean; // the duplicate request sent because the first was slow
+  cancelled?: boolean; // stopped because the other (hedged) request answered first
+}
+
+type CallResult = { ok: true; text: string } | { ok: false; status: number | null; error: AiProviderError };
+type Kind = "text" | "audio";
+
+/** Resolves with the first successful result; if all fail, with the first failure. */
+function firstOk(calls: Promise<CallResult>[]): Promise<CallResult> {
+  return new Promise((resolve) => {
+    let pending = calls.length;
+    let firstFailure: CallResult | null = null;
+    for (const c of calls) {
+      void c.then((r) => {
+        if (r.ok) return resolve(r);
+        firstFailure ??= r;
+        if (--pending === 0) resolve(firstFailure);
+      });
+    }
+  });
 }
 
 type Thinking = { thinkingLevel: "minimal" } | { thinkingBudget: number } | null;
@@ -72,7 +119,8 @@ const mentionsSchema = (msg: string) => /response_?json_?schema|responseJsonSche
  * Google Gemini (AI Studio API). One generateContent call per request with JSON output;
  * audio goes in as inline data, so a voice task is transcribed AND parsed in one call.
  * Robustness: per-call timeouts inside a total budget, model fallback
- * (GEMINI_MODEL → gemini-3.1-flash-lite → gemini-flash-latest → gemini-2.5-flash), and automatic removal of a
+ * (GEMINI_MODEL → gemini-3.1-flash-lite → gemini-2.5-flash-lite → gemini-flash-latest → gemini-2.5-flash, with
+ * unavailable models remembered for 10 min), a hedged duplicate when Google is slow, and automatic removal of a
  * thinking/schema setting the model rejects. Every failed call is logged with Google's message.
  * The API key is only sent in the x-goog-api-key header and is never logged.
  */
@@ -87,15 +135,24 @@ export class GeminiProvider implements AiProvider {
     private readonly apiKey: string = env.geminiKey,
     model: string = env.geminiModel || DEFAULT_GEMINI_MODEL,
     private readonly fetchImpl: typeof fetch = fetch,
-    opts: { budgetMs?: number; callTimeoutMs?: number; fallback?: boolean } = {},
+    opts: { budgetMs?: number; callTimeoutMs?: number; fallback?: boolean; hedgeAfterMs?: { text: number; audio: number } | null } = {},
   ) {
     if (!apiKey) throw new AiProviderError("config", "GEMINI_API_KEY is not set");
     // fallback: false = only this model (used by the benchmark to compare models fairly)
     this.models = [...new Set([model.trim(), ...(opts.fallback === false ? [] : FALLBACK_GEMINI_MODELS)].filter(Boolean))];
     this.deadline = Date.now() + (opts.budgetMs ?? BUDGET_MS);
     this.callTimeoutMs = opts.callTimeoutMs ?? CALL_TIMEOUT_MS;
+    this.hedgeAfterMs = opts.hedgeAfterMs === undefined ? HEDGE_AFTER_MS : opts.hedgeAfterMs;
   }
   private readonly callTimeoutMs: number;
+  private readonly hedgeAfterMs: { text: number; audio: number } | null;
+
+  /** The chain without models that recently answered "unavailable" (unless that would leave none). */
+  private usableModels() {
+    const now = Date.now();
+    const usable = this.models.filter((m) => (memory.unavailable.get(m) ?? 0) <= now);
+    return usable.length ? usable : this.models;
+  }
 
   /** Milliseconds left in this request's budget. */
   timeLeft() {
@@ -103,11 +160,12 @@ export class GeminiProvider implements AiProvider {
   }
 
   parseItems(text: string, ctx: ParseContext, opts: { retryHint?: string } = {}) {
-    return this.generate(buildSystemPrompt(ctx), [{ text: `The user's text:\n"""${text.slice(0, 4000)}"""` }], parseResultJsonSchema, opts.retryHint);
+    return this.generate("text", buildSystemPrompt(ctx), [{ text: `The user's text:\n"""${text.slice(0, 4000)}"""` }], parseResultJsonSchema, opts.retryHint);
   }
 
   parseAudio(audio: AudioInput, ctx: ParseContext, opts: { lang?: "az" | "en"; retryHint?: string } = {}) {
     return this.generate(
+      "audio",
       buildSystemPrompt(ctx) + "\n\n" + buildAudioInstruction(opts.lang),
       [{ text: "Transcribe this voice note, then extract the items." }, { inlineData: { mimeType: normalizeAudioMime(audio.mimeType), data: audio.base64 } }],
       parseAudioJsonSchema,
@@ -115,10 +173,10 @@ export class GeminiProvider implements AiProvider {
     );
   }
 
-  private async generate(system: string, parts: Part[], schema: object, retryHint?: string): Promise<string> {
+  private async generate(kind: Kind, system: string, parts: Part[], schema: object, retryHint?: string): Promise<string> {
     const instruction = retryHint ? `${system}\n\n${retryHint}` : system;
     // once a model has answered, stay on it for the rest of this request (e.g. the retry)
-    const models = this.modelUsed ? [this.modelUsed] : this.models;
+    const models = this.modelUsed ? [this.modelUsed] : this.usableModels();
     let lastError: AiProviderError | null = null;
 
     for (const model of models) {
@@ -126,8 +184,9 @@ export class GeminiProvider implements AiProvider {
       let useSchema = true;
       // up to 3 tries on the same model: as-is, then without a rejected thinking / schema setting
       for (let variant = 0; variant < 3; variant++) {
-        const r = await this.call(model, instruction, parts, schema, thinking, useSchema);
+        const r = await this.hedgedCall(kind, model, instruction, parts, schema, thinking, useSchema);
         if (r.ok) {
+          memory.unavailable.delete(model);
           if (this.modelUsed !== model) console.info(`[gemini] model used: ${model}${model !== this.models[0] ? ` (fallback from ${this.models[0]})` : ""}`);
           this.modelUsed = model;
           return r.text;
@@ -145,9 +204,37 @@ export class GeminiProvider implements AiProvider {
         break;
       }
       if (!lastError || lastError.code !== "model") throw lastError ?? new AiProviderError("upstream");
-      // model unavailable → next model in the chain
+      // model unavailable → remember it for a while and go on with the next model in the chain
+      memory.unavailable.set(model, Date.now() + UNAVAILABLE_FOR_MS);
     }
     throw new AiProviderError("config", `no usable Gemini model (tried ${models.join(", ")}): ${lastError?.message ?? ""}`);
+  }
+
+  /**
+   * One call, plus a duplicate if the first hasn't answered within the hedge delay (free-tier
+   * latency varies a lot; a second request often comes back sooner). First success wins and the
+   * other request is cancelled. Duplicates are capped per minute to respect the free-tier RPM.
+   */
+  private async hedgedCall(kind: Kind, model: string, system: string, parts: Part[], schema: object, thinking: Thinking, useSchema: boolean) {
+    const maxOutputTokens = MAX_OUTPUT_TOKENS[kind];
+    const primaryStop = new AbortController();
+    const primary = this.call(model, system, parts, schema, thinking, useSchema, { maxOutputTokens, cancel: primaryStop.signal });
+    const after = this.hedgeAfterMs?.[kind];
+    if (!after) return primary;
+
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const early = await Promise.race([primary, new Promise<null>((r) => (timer = setTimeout(() => r(null), after)))]);
+    clearTimeout(timer);
+    if (early) return early;
+    // only worth it if a duplicate can still finish in time, and within the per-minute allowance
+    if (this.timeLeft() < 6_000 || !takeHedgeSlot()) return primary;
+
+    const hedgeStop = new AbortController();
+    const hedge = this.call(model, system, parts, schema, thinking, useSchema, { maxOutputTokens, cancel: hedgeStop.signal, hedge: true });
+    const winner = await firstOk([primary, hedge]);
+    primaryStop.abort();
+    hedgeStop.abort();
+    return winner;
   }
 
   private async call(
@@ -157,12 +244,13 @@ export class GeminiProvider implements AiProvider {
     schema: object,
     thinking: Thinking,
     useSchema: boolean,
-  ): Promise<{ ok: true; text: string } | { ok: false; status: number | null; error: AiProviderError }> {
+    opts: { maxOutputTokens?: number; cancel?: AbortSignal; hedge?: boolean } = {},
+  ): Promise<CallResult> {
     const left = this.timeLeft();
     const record = (a: Omit<GeminiAttempt, "model" | "thinking" | "schema">) => {
-      const attempt = { model, thinking: describeThinking(thinking), schema: useSchema, ...a };
+      const attempt: GeminiAttempt = { model, thinking: describeThinking(thinking), schema: useSchema, ...(opts.hedge ? { hedge: true } : {}), ...a };
       this.attempts.push(attempt);
-      if (!attempt.ok) console.error("[gemini] call failed", JSON.stringify(attempt));
+      if (!attempt.ok && !attempt.cancelled) console.error("[gemini] call failed", JSON.stringify(attempt));
     };
     if (left < 3_000) {
       record({ status: null, ok: false, ms: 0, error: "time budget used up" });
@@ -176,6 +264,7 @@ export class GeminiProvider implements AiProvider {
         responseMimeType: "application/json",
         ...(useSchema ? { responseJsonSchema: schema } : {}),
         temperature: 0.1,
+        ...(opts.maxOutputTokens ? { maxOutputTokens: opts.maxOutputTokens } : {}),
         ...(thinking ? { thinkingConfig: thinking } : {}),
       },
     };
@@ -186,9 +275,15 @@ export class GeminiProvider implements AiProvider {
         method: "POST",
         headers: { "content-type": "application/json", "x-goog-api-key": this.apiKey },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(Math.min(this.callTimeoutMs, left - 1_000)),
+        signal: opts.cancel
+          ? AbortSignal.any([AbortSignal.timeout(Math.min(this.callTimeoutMs, left - 1_000)), opts.cancel])
+          : AbortSignal.timeout(Math.min(this.callTimeoutMs, left - 1_000)),
       });
     } catch (err) {
+      if (opts.cancel?.aborted) {
+        record({ status: null, ok: false, ms: Date.now() - t0, error: "cancelled: the other request answered first", cancelled: true });
+        return { ok: false, status: null, error: new AiProviderError("network", "cancelled") };
+      }
       const timedOut = err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
       const message = timedOut ? `no answer within ${Math.round((Date.now() - t0) / 1000)} s` : err instanceof Error ? err.message : String(err);
       record({ status: null, ok: false, ms: Date.now() - t0, error: message });

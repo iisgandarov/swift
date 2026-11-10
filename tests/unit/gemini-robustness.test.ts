@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { GeminiProvider, normalizeAudioMime, thinkingFor } from "@/lib/ai/gemini";
+import { beforeEach, describe, expect, it } from "vitest";
+import { GeminiProvider, normalizeAudioMime, resetGeminiMemory, thinkingFor } from "@/lib/ai/gemini";
 import { parseAudioWithRetry, parseWithRetry } from "@/lib/ai/parse";
 import type { ParseContext } from "@/lib/ai/schema";
 
@@ -28,7 +28,10 @@ function fake(route: (model: string, body: Record<string, unknown>, n: number) =
 }
 const err = (status: number, message: string) => ({ status, body: { error: { code: status, message } } });
 
-describe("model fallback: GEMINI_MODEL → gemini-3.1-flash-lite → gemini-flash-latest → gemini-2.5-flash", () => {
+// what one request learns (unavailable models, hedges used) is shared on a warm instance
+beforeEach(() => resetGeminiMemory());
+
+describe("model fallback: GEMINI_MODEL → gemini-3.1-flash-lite → gemini-2.5-flash-lite → gemini-flash-latest → gemini-2.5-flash", () => {
   it("falls back when the configured model does not exist (404) and reports which model answered", async () => {
     const { fetchImpl, calls } = fake((m) => (m === "gemini-3.8-flash" ? err(404, "models/gemini-3.8-flash is not found for API version v1beta") : { status: 200, body: okBody }));
     const g = new GeminiProvider("AIzaTEST", "gemini-3.8-flash", fetchImpl);
@@ -44,7 +47,7 @@ describe("model fallback: GEMINI_MODEL → gemini-3.1-flash-lite → gemini-flas
     );
     const g = new GeminiProvider("AIzaTEST", "gemini-3.8-flash", fetchImpl);
     await parseWithRetry(g, "x", ctx, noSleep);
-    expect(calls.map((c) => c.model)).toEqual(["gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-2.5-flash"]);
+    expect(calls.map((c) => c.model)).toEqual(["gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-2.5-flash"]);
     expect(g.modelUsed).toBe("gemini-2.5-flash");
   });
 
@@ -72,7 +75,7 @@ describe("default model", () => {
   it("is gemini-3.1-flash-lite with minimal thinking, and the chain is de-duplicated", async () => {
     const { fetchImpl, calls } = fake(() => ({ status: 200, body: okBody }));
     const g = new GeminiProvider("AIzaTEST", undefined, fetchImpl);
-    expect(g.models).toEqual(["gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-2.5-flash"]);
+    expect(g.models).toEqual(["gemini-3.1-flash-lite", "gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-2.5-flash"]);
     await parseWithRetry(g, "x", ctx, noSleep);
     expect(calls[0].model).toBe("gemini-3.1-flash-lite");
     expect((calls[0].body.generationConfig as Record<string, unknown>).thinkingConfig).toEqual({ thinkingLevel: "minimal" });
