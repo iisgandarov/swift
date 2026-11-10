@@ -1,5 +1,6 @@
 import { addDays, startOfWeek, weekdayIndex } from "@/lib/dates";
-import { bucketFor, categoryNameFor } from "@/lib/domain/categorize";
+import { categoryNameFor } from "@/lib/domain/categorize";
+import { cleanTitle } from "@/lib/domain/title";
 import type { AiProvider, AudioInput, ParseContext, ParseResult, ParsedItem } from "./schema";
 
 /**
@@ -17,10 +18,6 @@ const AZ_WEEKDAYS: [RegExp, number][] = [
 ];
 const EN_WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
-const FILLER = [
-  /xatırlat ki/g, /yadıma sal/g, /\bolacaq\b/g, /\bqeyd et\b/g, /\bonu\b/g, /yadımda saxla/g, /remind me to/g, /i need to/g, /don't forget to/g, /lazımdır/g,
-  /,?\s*(təcilidir|təcili|vacibdir|vacib|mütləq|urgent|asap|it's urgent|important)/g,
-];
 
 function nextWeekday(today: string, target: number, nextWeek: boolean) {
   if (nextWeek) return addDays(startOfWeek(today), 7 + target);
@@ -43,7 +40,8 @@ function parseOne(raw: string, ctx: ParseContext, carryDate: string | null): Par
   for (const [re, idx] of AZ_WEEKDAYS) {
     if (re.test(s)) {
       date = nextWeekday(today, idx, /gələn/.test(s));
-      s = s.replace(re, " ");
+      // "cümə günü", "cümə gününə qədər" → the whole phrase is a date, not part of the title
+      s = s.replace(new RegExp(`${re.source}(?: gün\\p{L}*)?(?: qədər)?`, "u"), " ");
       break;
     }
   }
@@ -60,7 +58,11 @@ function parseOne(raw: string, ctx: ParseContext, carryDate: string | null): Par
   const ampm = s.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/);
   // \b doesn't work after Azerbaijani letters (ə, ü), so use an explicit end lookahead
   // "-də/-da" is often typed with a Latin "e" ("7de") — accept both
-  const az = s.match(/(?:saat\s*)?(\d{1,2})(?:[:.](\d{2}))?-?(?:da|də|de|ə|e|a|ün|un)(?=[\s,.]|$)/) ?? s.match(/saat\s*(\d{1,2})(?:[:.](\d{2}))?/);
+  const az =
+    s.match(/(?:saat\s*)?(\d{1,2})(?:[:.](\d{2}))?-?(?:da|də|de|ə|e|a|ün|un)(?=[\s,.]|$)/) ??
+    s.match(/saat\s*(\d{1,2})(?:[:.](\d{2}))?/) ??
+    s.match(/(?<!\p{L})at\s+(\d{1,2})(?::(\d{2}))?(?![\d:])/u) ?? // English "at 6:45" (same bare-hour rule)
+    s.match(/(?<![\d.])(\d{1,2}):(\d{2})(?![\d:])/); // any "16:30"
   let bareMorning = false; // an hour 7–11 read as morning only because nothing said otherwise
   if (ampm) {
     let h = Number(ampm[1]) % 12;
@@ -90,6 +92,12 @@ function parseOne(raw: string, ctx: ParseContext, carryDate: string | null): Par
   // type: the user's choice → explicit word → meeting / call / plan with a person → task
   const explicitTask = /(?<!\p{L})(tapşırıq|task)(?!\p{L})/u.test(s);
   const explicitEvent = /(?<!\p{L})(tədbir|event)(?!\p{L})/u.test(s);
+  // a call / zəng is an event only with someone ("Ramizə zəng", "call with Aysel", "müştəri zəngi"), not "call the bank"
+  const meetingWord = /(?<!\p{L})(görüş\p{L}*|toplantı\p{L}*|iclas\p{L}*|meeting|meet with|sync|1:1)(?!\p{L})/u.test(s);
+  const callWord = /(?<!\p{L})(zəng\p{L}*|calls?|called)(?!\p{L})/u.test(s);
+  const callsPerson =
+    /\p{Lu}\p{Ll}+(ə|a|yə|ya|la|lə)\s+zəng/u.test(raw) || /call(?: with)?\s+\p{Lu}/u.test(raw) ||
+    /(?<!\p{L})(müştəri\p{L}*|client|customer|anam\p{L}*|atam\p{L}*|mom|dad|dost\p{L}*|həkim\p{L}*)(?!\p{L})/u.test(s);
   const withPerson = /(?<!\p{L})(ilə|with)(?!\p{L})/u.test(s) || /(?<!\p{L})\p{Lu}\p{Ll}+(lə|la)(?!\p{L})/u.test(raw) || /(?<!\p{L})(anam|atam|dost\p{L}*|ailə\p{L}*|qardaş\p{L}*|bacı\p{L}*)(la|lə)(?!\p{L})/u.test(s);
   // appointments and fixed-time activities are events too
   const sfx = "(?:u|ü|ı|i|a|ə|da|də|dan|dən|un|ün|ın|in|na|nə|ya|yə|nda|ndə|lar\\p{L}*|lər\\p{L}*)?"; // case endings only: "toya" yes, "toyuq" no
@@ -101,22 +109,12 @@ function parseOne(raw: string, ctx: ParseContext, carryDate: string | null): Par
     ? ctx.preferredType === "event"
     : explicitTask
       ? false
-      : explicitEvent || bucketFor(raw) === "meeting" || withPerson || activity;
+      : explicitEvent || meetingWord || (callWord && callsPerson) || withPerson || activity;
 
-  let title = s
-    .replace(/(?<!\p{L})(tapşırıq|tədbir|task|event)( kimi| olaraq)?:?(?!\p{L})/gu, " ")
-    .replace(/(\p{L}+?)(məliyəm|malıyam)\b/gu, "$1");
-  for (const re of FILLER) title = title.replace(re, " ");
-  title = title
-    .replace(/\b(bu gün|sabah|birigün|tomorrow|today|day after tomorrow|bu axşam|tonight|gələn|next|this|by|on|at)\b/g, " ")
-    .replace(/(saat\s*)?\d{1,2}([:.]\d{2})?\s*(am|pm|-?(da|də|de|ə|e|a|ün|un))?(?=[\s,.]|$)/g, " ")
-    .replace(/\b(səhər|axşam|gecə|günortadan sonra|günorta|afternoon|morning|evening)\b/g, " ")
-    .replace(/\b(yarım saatlıq|yarım saat|bir saatlıq|1 saatlıq|half an hour|one hour)\b/g, " ")
-    .replace(/\b(gününə qədər|qədər)\b/g, " ")
-    .replace(/\s+/g, " ")
-    .replace(/^[\s,.-]+|[\s,.-]+$/g, "");
+  const title = cleanTitle(s, "draft");
   // restore the original casing of each word (brand names like EduPo, TLB)
-  const original = new Map(raw.split(/[\s,.]+/).map((w) => [w.toLocaleLowerCase("az"), w]));
+  // both lowercasings: in the az locale "I" becomes "ı" ("BI" → "bı"), plain lowercase gives "bi"
+  const original = new Map(raw.split(/[\s,.]+/).flatMap((w) => [[w.toLowerCase(), w], [w.toLocaleLowerCase("az"), w]] as [string, string][]));
   const words = title
     .split(" ")
     .slice(0, 6)
