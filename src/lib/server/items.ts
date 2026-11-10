@@ -5,6 +5,8 @@ import type { Item } from "@/lib/domain/types";
 import { DEFAULT_TZ } from "@/lib/dates";
 import type { AppContext } from "./context";
 import { syncItem } from "./sync";
+import { runAfterResponse } from "./background";
+import { googleConfigured } from "./env";
 import { NotFoundError } from "./repo";
 import type { Timing } from "./timing";
 
@@ -19,12 +21,45 @@ async function assertCategory(ctx: AppContext, categoryId: string | null | undef
   if (!cats.some((c) => c.id === categoryId)) throw new NotFoundError("category");
 }
 
-export async function createItem(ctx: AppContext, input: ItemInput, timing?: Timing): Promise<Item> {
+/** Whether new events will be pushed to Google Calendar (connected, possibly needing a reconnect). */
+async function calendarConnected(ctx: AppContext) {
+  if (!ctx.demo && !googleConfigured()) return false;
+  return Boolean(await ctx.repo.getGoogleConnection());
+}
+
+/**
+ * Creates one or more items with as few round trips as possible: the category check, the rule
+ * context and the Calendar connection are looked up together, the rows go in one insert, and
+ * the Google Calendar sync runs after the response (events show "syncing" until it's done;
+ * failures still end as sync_status = failed with Retry, so nothing is lost).
+ */
+export async function createItems(ctx: AppContext, inputs: ItemInput[], timing?: Timing): Promise<Item[]> {
   const t = <T,>(name: string, p: Promise<T>) => (timing ? timing.time(name, p) : p);
-  await t("category", assertCategory(ctx, input.category_id));
-  const row = buildNewItem(input, await t("rules", ruleContext(ctx)));
-  const created = await t("insert", ctx.repo.createItem(row));
-  return (await t("sync", syncItem(ctx, null, created))) ?? created;
+  const wantsCategory = inputs.some((i) => i.category_id);
+  const hasEvents = (rows: { type: string }[]) => rows.some((r) => r.type === "event");
+  const [cats, rules, calendar] = await t(
+    "prepare",
+    Promise.all([
+      wantsCategory ? ctx.repo.listCategories() : Promise.resolve([]),
+      ruleContext(ctx),
+      calendarConnected(ctx),
+    ]),
+  );
+  for (const input of inputs) {
+    if (input.category_id && !cats.some((c) => c.id === input.category_id)) throw new NotFoundError("category");
+  }
+  // without a Calendar connection, events are app-only right away (no "syncing" state)
+  const rows = inputs.map((input) => {
+    const row = buildNewItem(input, rules);
+    return !calendar && row.sync_status === "pending" ? { ...row, sync_status: "none" as const } : row;
+  });
+  const created = await t("insert", ctx.repo.createItems(rows));
+  if (calendar && hasEvents(created)) {
+    runAfterResponse("sync", async () => {
+      for (const item of created) if (item.sync_status === "pending") await syncItem(ctx, null, item);
+    });
+  }
+  return created;
 }
 
 export async function updateItem(ctx: AppContext, id: string, patch: ItemPatch): Promise<Item> {

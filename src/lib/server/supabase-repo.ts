@@ -105,6 +105,15 @@ export class SupabaseRepo implements Repo {
     return must(await this.db.from("items").insert({ ...row, user_id: this.userId }).select("*").single(), "item") as Item;
   }
 
+  async createItems(rows: NewItemRow[]) {
+    const { data, error } = await this.db
+      .from("items")
+      .insert(rows.map((r) => ({ ...r, user_id: this.userId })))
+      .select("*");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as Item[];
+  }
+
   async updateItem(id: string, patch: Partial<Item>) {
     const { id: _i, user_id: _u, created_at: _c, updated_at: _up, ...rest } = patch;
     return must(

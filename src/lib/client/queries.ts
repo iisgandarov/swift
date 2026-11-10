@@ -77,7 +77,13 @@ export function useCreateItems() {
         recordPerf({ kind: "save", at: Date.now(), ok, totalMs: Math.round(performance.now() - t0), stages, note: `${inputs.length}` });
       }
     },
-    onSuccess: (items) => items.forEach((i) => upsertCached(qc, i)),
+    onSuccess: (items) => {
+      items.forEach((i) => upsertCached(qc, i));
+      // Calendar sync runs on the server after the response: pick up its result shortly
+      if (items.some((i) => i.sync_status === "pending")) {
+        for (const ms of [3_000, 8_000]) setTimeout(() => qc.invalidateQueries({ queryKey: qk.items }), ms);
+      }
+    },
     onSettled: () => qc.invalidateQueries({ queryKey: qk.items }),
   });
 }

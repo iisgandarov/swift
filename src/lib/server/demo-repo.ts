@@ -172,6 +172,12 @@ export class DemoRepo implements Repo {
     return clone(item);
   }
 
+  async createItems(rows: NewItemRow[]) {
+    const out: Item[] = [];
+    for (const row of rows) out.push(await this.createItem(row));
+    return out;
+  }
+
   async updateItem(id: string, patch: Partial<Item>) {
     const item = store().items.find((i) => i.id === id);
     if (!item) throw new NotFoundError("item");

@@ -33,6 +33,8 @@ export interface Repo {
   listItems(q?: ItemQuery): Promise<Item[]>;
   getItem(id: string): Promise<Item | null>;
   createItem(row: NewItemRow): Promise<Item>;
+  /** Several items in one insert (one round trip), returned in the same order. */
+  createItems(rows: NewItemRow[]): Promise<Item[]>;
   updateItem(id: string, patch: Partial<Item>): Promise<Item>;
   deleteItem(id: string): Promise<void>;
   /** Restores a previously deleted item (undo), keeping its id. */
