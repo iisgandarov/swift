@@ -36,13 +36,15 @@ export const POST = withAuth(async (ctx, req) => {
   if (!ALLOWED.test(mimeType)) throw new HttpError(415, "unsupported_audio");
   const meta = metaSchema.parse({ lang: form.get("lang") ?? undefined, duration: form.get("duration") ?? 0 });
 
-  await timing.time("rate", enforceAiRateLimit(ctx.repo, "voice"));
+  const [, parseCtx] = await Promise.all([
+    timing.time("rate", enforceAiRateLimit(ctx.repo, "voice")),
+    timing.time("context", buildParseContext(ctx)),
+  ]);
   const base64 = Buffer.from(await audio.arrayBuffer()).toString("base64");
   timing.add("audio_kb", audio.size / 1024, mimeType);
   let provider: AiProvider | null = null;
   try {
     provider = getAiProvider();
-    const parseCtx = await timing.time("context", buildParseContext(ctx));
     const result = await timing.time(
       "ai",
       parseAudioWithRetry(provider, { base64, mimeType }, parseCtx, meta.lang === "auto" ? undefined : meta.lang),

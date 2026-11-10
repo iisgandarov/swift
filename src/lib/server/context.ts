@@ -26,14 +26,17 @@ export const getAppContext = cache(async (): Promise<AppContext | null> => {
     return { user: DEMO_USER, repo: new DemoRepo(), demo: true };
   }
   const db = await createSupabaseServer();
-  const { data, error } = await db.auth.getUser();
-  if (error || !data.user) return null;
-  const email = data.user.email ?? "";
+  // getClaims verifies the session JWT's signature (locally with the project's signing keys,
+  // or via the Auth server for legacy secrets) — no extra round trip in the common case.
+  const { data, error } = await db.auth.getClaims();
+  const claims = data?.claims;
+  if (error || !claims?.sub) return null;
+  const email = typeof claims.email === "string" ? claims.email : "";
   if (!isEmailAllowed(email)) return null;
-  const meta = data.user.user_metadata as { full_name?: string; name?: string } | undefined;
+  const meta = claims.user_metadata as { full_name?: string; name?: string } | undefined;
   return {
-    user: { id: data.user.id, email, name: meta?.full_name ?? meta?.name ?? email.split("@")[0] },
-    repo: new SupabaseRepo(db, data.user.id),
+    user: { id: claims.sub, email, name: meta?.full_name ?? meta?.name ?? email.split("@")[0] },
+    repo: new SupabaseRepo(db, claims.sub),
     demo: false,
   };
 });

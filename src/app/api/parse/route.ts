@@ -15,11 +15,14 @@ const bodySchema = z.object({ text: z.string().trim().min(1).max(2000) });
 export const POST = withAuth(async (ctx, req) => {
   const timing = timingFor(req);
   const { text } = bodySchema.parse(await readJson(req));
-  await timing.time("rate", enforceAiRateLimit(ctx.repo, "parse"));
+  // the rate-limit check and the profile/categories lookup are independent: run them together
+  const [, parseCtx] = await Promise.all([
+    timing.time("rate", enforceAiRateLimit(ctx.repo, "parse")),
+    timing.time("context", buildParseContext(ctx)),
+  ]);
   let provider: AiProvider | null = null;
   try {
     provider = getAiProvider();
-    const parseCtx = await timing.time("context", buildParseContext(ctx));
     const result = await timing.time("ai", parseWithRetry(provider, text, parseCtx));
     return json({ ...result, transcript: text });
   } catch (err) {
