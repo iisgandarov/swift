@@ -25,8 +25,12 @@ const CALL_TIMEOUT_MS = 15_000;
 const HEDGE_AFTER_MS = { text: 3_000, audio: 4_000 };
 /** Free tier allows ~15 requests/minute: never spend more than this many on duplicates per minute. */
 const MAX_HEDGES_PER_MINUTE = 4;
-/** Upper bound on the answer size: a handful of items (plus the transcript for audio). */
-const MAX_OUTPUT_TOKENS = { text: 1_500, audio: 2_500 };
+/**
+ * Upper bound on the answer size. Generous on purpose: on Gemini 3.x the model's "thinking"
+ * tokens count against this limit, and a tight cap (1500/2500 on 2026-11-10) cut answers off
+ * before any JSON was written (empty response, finishReason MAX_TOKENS → every request failed).
+ */
+const MAX_OUTPUT_TOKENS = { text: 8_192, audio: 8_192 };
 /** How long a model that answered "not found / not available" is skipped. */
 const UNAVAILABLE_FOR_MS = 10 * 60_000;
 
@@ -53,6 +57,7 @@ type Part = { text: string } | { inlineData: { mimeType: string; data: string } 
 
 interface GeminiResponse {
   candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] }; finishReason?: string }[];
+  usageMetadata?: { thoughtsTokenCount?: number; candidatesTokenCount?: number };
   promptFeedback?: { blockReason?: string };
   error?: { code?: number; message?: string; status?: string };
 }
@@ -88,7 +93,7 @@ function firstOk(calls: Promise<CallResult>[]): Promise<CallResult> {
   });
 }
 
-type Thinking = { thinkingLevel: "minimal" } | { thinkingBudget: number } | null;
+type Thinking = { thinkingLevel: "minimal" | "low" } | { thinkingBudget: number } | null;
 
 /**
  * Lowest thinking the model family allows: this is a small extraction task, and thinking
@@ -182,8 +187,8 @@ export class GeminiProvider implements AiProvider {
     for (const model of models) {
       let thinking = thinkingFor(model);
       let useSchema = true;
-      // up to 3 tries on the same model: as-is, then without a rejected thinking / schema setting
-      for (let variant = 0; variant < 3; variant++) {
+      // up to 4 tries on the same model: as-is, then with a less strict thinking / without a rejected schema setting
+      for (let variant = 0; variant < 4; variant++) {
         const r = await this.hedgedCall(kind, model, instruction, parts, schema, thinking, useSchema);
         if (r.ok) {
           memory.unavailable.delete(model);
@@ -194,7 +199,9 @@ export class GeminiProvider implements AiProvider {
         lastError = r.error;
         const msg = r.error.message;
         if (r.status === 400 && thinking && mentionsThinking(msg)) {
-          thinking = null; // model rejects this thinking setting → send none
+          // model rejects this thinking setting → "low" (still fast) before sending none, which on
+          // Gemini 3.x means the model's default, much longer thinking
+          thinking = thinking && "thinkingLevel" in thinking && thinking.thinkingLevel === "minimal" ? { thinkingLevel: "low" } : null;
           continue;
         }
         if (r.status === 400 && useSchema && mentionsSchema(msg) && !isModelUnavailable(400, msg)) {
@@ -312,7 +319,8 @@ export class GeminiProvider implements AiProvider {
       .map((p) => p.text ?? "")
       .join("");
     if (!text) {
-      const why = `empty response (finishReason ${data.candidates?.[0]?.finishReason ?? "none"})`;
+      const used = data.usageMetadata;
+      const why = `empty response (finishReason ${data.candidates?.[0]?.finishReason ?? "none"}${used ? `, thinking tokens ${used.thoughtsTokenCount ?? 0}, answer tokens ${used.candidatesTokenCount ?? 0}` : ""})`;
       record({ status: res.status, ok: false, ms, error: why });
       return { ok: false, status: res.status, error: new AiProviderError("upstream", why) };
     }

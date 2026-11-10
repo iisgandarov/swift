@@ -88,14 +88,25 @@ describe("hedged request", () => {
 });
 
 describe("request shape and retry", () => {
-  it("caps the answer size: 1500 tokens for text, 2500 for audio", async () => {
+  it("an answer cut off by the token limit is reported with finishReason and token counts", async () => {
+    const cut = { status: 200, body: { candidates: [{ content: { parts: [{ text: "…", thought: true }] }, finishReason: "MAX_TOKENS" }], usageMetadata: { thoughtsTokenCount: 1499, candidatesTokenCount: 0 } } };
+    const { fetchImpl } = fake(() => cut);
+    const g = new GeminiProvider("AIzaTEST", undefined, fetchImpl, { hedgeAfterMs: null, fallback: false });
+    const log = console.error;
+    console.error = () => {};
+    await expect(parseWithRetry(g, "x", ctx)).rejects.toMatchObject({ code: "ai_unavailable" });
+    console.error = log;
+    expect(g.attempts[0].error).toBe("empty response (finishReason MAX_TOKENS, thinking tokens 1499, answer tokens 0)");
+  });
+
+  it("caps the answer size generously (thinking tokens count against it on Gemini 3.x)", async () => {
     const { fetchImpl, calls } = fake(() => ok);
     await parseWithRetry(new GeminiProvider("AIzaTEST", undefined, fetchImpl), "x", ctx);
     const audioOk = { status: 200, body: { candidates: [{ content: { parts: [{ text: JSON.stringify({ transcript: "", detected_language: "az", items: [], clarification: null }) }] } }] } };
     const a = fake(() => audioOk);
     await parseAudioWithRetry(new GeminiProvider("AIzaTEST", undefined, a.fetchImpl), { base64: "AAAA", mimeType: "audio/wav" }, ctx);
-    expect((calls[0].body.generationConfig as Record<string, unknown>).maxOutputTokens).toBe(1500);
-    expect((a.calls[0].body.generationConfig as Record<string, unknown>).maxOutputTokens).toBe(2500);
+    expect((calls[0].body.generationConfig as Record<string, unknown>).maxOutputTokens).toBe(8192);
+    expect((a.calls[0].body.generationConfig as Record<string, unknown>).maxOutputTokens).toBe(8192);
   });
 
   it("retries straight away, without a fixed pause", async () => {

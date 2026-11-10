@@ -91,15 +91,24 @@ describe("thinking: lowest level the model allows", () => {
     expect(thinkingFor("gemini-2.5-pro")).toEqual({ thinkingBudget: 128 });
     expect(thinkingFor("gemini-2.0-flash")).toBeNull();
   });
-  it("is sent in generationConfig, and dropped if the model rejects it", async () => {
+  it("is sent in generationConfig; if rejected, 'low' is tried before sending none", async () => {
     const { fetchImpl, calls } = fake((_m, body) =>
       (body.generationConfig as Record<string, unknown>).thinkingConfig ? err(400, "Thinking level minimal is not supported for this model.") : { status: 200, body: okBody },
     );
     const g = new GeminiProvider("AIzaTEST", "gemini-3.8-flash", fetchImpl);
     await parseWithRetry(g, "x", ctx, noSleep);
     expect((calls[0].body.generationConfig as Record<string, unknown>).thinkingConfig).toEqual({ thinkingLevel: "minimal" });
-    expect((calls[1].body.generationConfig as Record<string, unknown>).thinkingConfig).toBeUndefined();
+    expect((calls[1].body.generationConfig as Record<string, unknown>).thinkingConfig).toEqual({ thinkingLevel: "low" });
+    expect((calls[2].body.generationConfig as Record<string, unknown>).thinkingConfig).toBeUndefined();
     expect(g.modelUsed).toBe("gemini-3.8-flash");
+  });
+  it("uses 'low' when only 'minimal' is rejected", async () => {
+    const { fetchImpl, calls } = fake((_m, body) => {
+      const t = (body.generationConfig as { thinkingConfig?: { thinkingLevel?: string } }).thinkingConfig;
+      return t?.thinkingLevel === "minimal" ? err(400, "Thinking level minimal is not supported for this model.") : { status: 200, body: okBody };
+    });
+    await parseWithRetry(new GeminiProvider("AIzaTEST", "gemini-3.1-flash-lite", fetchImpl), "x", ctx, noSleep);
+    expect(calls.map((c) => (c.body.generationConfig as { thinkingConfig?: unknown }).thinkingConfig)).toEqual([{ thinkingLevel: "minimal" }, { thinkingLevel: "low" }]);
   });
   it("a rejected JSON schema falls back to plain JSON mode on the same model", async () => {
     const { fetchImpl, calls } = fake((_m, body) =>
