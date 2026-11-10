@@ -220,18 +220,7 @@
     "export": "Məlumatlarımı ixrac et (JSON)",
     "signOut": "Çıxış",
     "version": "Versiya {version}",
-    "googleNotConfigured": "Serverdə Google OAuth qurulmayıb (SETUP.md-ə bax).",
-    "speed": "Sürət",
-    "speedHint": "Bu cihazda son ölçmələr (p50 = adi, p90 = ən yavaş 10%). Yalnız uğurlu cəhdlər.",
-    "speedText": "Mətnli tapşırıq",
-    "speedVoice": "Səsli tapşırıq",
-    "speedSave": "Saxlama",
-    "speedStage": "Mərhələ",
-    "speedEmpty": "Hələ ölçmə yoxdur.",
-    "speedCount": "{count} ölçmə",
-    "speedClear": "Təmizlə",
-    "speedCopy": "Kopyala",
-    "speedCopied": "Kopyalandı"
+    "googleNotConfigured": "Serverdə Google OAuth qurulmayıb (SETUP.md-ə bax)."
   },
   "auth": {
     "signIn": "Google ilə davam et",

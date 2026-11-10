@@ -9,11 +9,8 @@ export class ApiError extends Error {
   }
 }
 
-export async function api<T>(
-  path: string,
-  init: RequestInit & { json?: unknown; timeoutMs?: number; onResponse?: (res: Response) => void } = {},
-): Promise<T> {
-  const { json, headers, timeoutMs, onResponse, ...rest } = init;
+export async function api<T>(path: string, init: RequestInit & { json?: unknown; timeoutMs?: number } = {}): Promise<T> {
+  const { json, headers, timeoutMs, ...rest } = init;
   let res: Response;
   try {
     res = await fetch(path, {
@@ -27,7 +24,6 @@ export async function api<T>(
     const name = err instanceof Error ? err.name : "";
     throw new ApiError(0, name === "TimeoutError" || name === "AbortError" ? "timeout" : "network");
   }
-  onResponse?.(res);
   if (res.status === 401) {
     // session expired: full reload to the login page clears client state
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination

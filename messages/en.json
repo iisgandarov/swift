@@ -220,18 +220,7 @@
     "export": "Export my data (JSON)",
     "signOut": "Sign out",
     "version": "Version {version}",
-    "googleNotConfigured": "Google OAuth isn't configured on the server yet (see SETUP.md).",
-    "speed": "Speed",
-    "speedHint": "Recent measurements on this device (p50 = typical, p90 = slowest 10%). Successful attempts only.",
-    "speedText": "Text task",
-    "speedVoice": "Voice task",
-    "speedSave": "Saving",
-    "speedStage": "Stage",
-    "speedEmpty": "No measurements yet.",
-    "speedCount": "{count} measurements",
-    "speedClear": "Clear",
-    "speedCopy": "Copy",
-    "speedCopied": "Copied"
+    "googleNotConfigured": "Google OAuth isn't configured on the server yet (see SETUP.md)."
   },
   "auth": {
     "signIn": "Continue with Google",

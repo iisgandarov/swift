@@ -7,7 +7,6 @@ import { mockParse } from "@/lib/ai/mock";
 import { draftsFromResult, type Draft } from "@/lib/domain/drafts";
 import { toWav16k } from "@/lib/client/wav";
 import { api, ApiError } from "@/lib/client/api";
-import { parseServerTiming, recordPerf, timed } from "@/lib/client/perf";
 import { useCategories } from "@/lib/client/queries";
 import { useAppSettings } from "@/hooks/use-app-settings";
 import { useOnline } from "@/hooks/use-online";
@@ -97,11 +96,9 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
         return; // accidental tap
       }
       setState("processing");
-      const t0 = performance.now();
-      const stages: Record<string, number> = {};
       const form = new FormData();
       // 16 kHz mono WAV: small, and accepted by every speech model; fall back to the raw recording
-      const wav = await timed(stages, "c_wav", () => toWav16k(r.blob));
+      const wav = await toWav16k(r.blob);
       if (wav) {
         form.append("audio", new File([wav], "voice.wav", { type: "audio/wav" }));
       } else {
@@ -110,28 +107,16 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
       }
       form.append("lang", lang);
       form.append("duration", String(Math.round(r.durationMs)));
-      stages.c_kb = Math.round(((form.get("audio") as File).size / 1024) * 10) / 10;
-      let ok = false;
-      let note: string | undefined;
       try {
         // the server gives up after ~50 s; don't leave "Understanding..." spinning longer than that
-        const tSend = performance.now();
         const res = await fetch("/api/voice", { method: "POST", body: form, credentials: "same-origin", signal: AbortSignal.timeout(CLIENT_TIMEOUT_MS) });
-        const server = parseServerTiming(res.headers.get("server-timing"));
-        Object.assign(stages, server.stages);
-        note = server.models.join(" · ");
-        // network + platform = round trip minus the time the server says it worked
-        stages.c_network = Math.max(0, Math.round(performance.now() - tSend - (server.stages.total ?? 0)));
         const body = (await res.json().catch(() => ({}))) as Partial<ParseResponse> & { error?: string };
         if (!res.ok) throw Object.assign(new ApiError(res.status, body.error ?? "server_error"), { transcript: body.transcript });
-        ok = true;
         handle(body as ParseResponse, "voice");
       } catch (err) {
         const transcript = (err as { transcript?: string }).transcript;
         const name = err instanceof Error ? err.name : "";
         fail(name === "TimeoutError" || name === "AbortError" ? new ApiError(0, "timeout") : err instanceof TypeError ? new ApiError(0, "network") : err, transcript);
-      } finally {
-        recordPerf({ kind: "voice", at: Date.now(), ok, totalMs: Math.round(performance.now() - t0), stages, note });
       }
     },
     [lang, handle, fail],
@@ -160,8 +145,6 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
         return false;
       }
       const gen = ++generation.current;
-      const t0 = performance.now();
-      const stages: Record<string, number> = {};
       let preview: VoiceResult | null = null;
       try {
         const local = mockParse(text, {
@@ -177,25 +160,11 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
       if (preview) {
         setResult(preview);
         setState("review");
-        stages.c_draft = Math.round(performance.now() - t0);
       } else {
         setState("processing");
       }
-      let ok = false;
-      let note: string | undefined;
       try {
-        const body = await api<ParseResponse>("/api/parse", {
-          method: "POST",
-          json: { text },
-          timeoutMs: CLIENT_TIMEOUT_MS,
-          onResponse: (res) => {
-            const server = parseServerTiming(res.headers.get("server-timing"));
-            Object.assign(stages, server.stages);
-            note = server.models.join(" · ");
-            stages.c_network = Math.max(0, Math.round(performance.now() - t0 - (server.stages.total ?? 0)));
-          },
-        });
-        ok = true;
+        const body = await api<ParseResponse>("/api/parse", { method: "POST", json: { text }, timeoutMs: CLIENT_TIMEOUT_MS });
         if (gen !== generation.current) return false;
         if (preview && draftsFromResult(body, { categories, defaultEventMinutes, today }).length === 0) {
           // the AI found nothing actionable but the draft did: keep the draft for review
@@ -213,8 +182,6 @@ export function useVoiceFlow({ lang, onFallbackText }: { lang: VoiceLang; onFall
         }
         fail(err, text);
         return false;
-      } finally {
-        recordPerf({ kind: "text", at: Date.now(), ok, totalMs: Math.round(performance.now() - t0), stages, note });
       }
     },
     [online, handle, fail, toast, t, tz, today, nowTime, locale, categories, defaultEventMinutes],

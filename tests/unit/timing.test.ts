@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { parseServerTiming, percentile, summarize, type PerfEntry } from "@/lib/client/perf";
 import { Timing, addAiAttempts } from "@/lib/server/timing";
 import { BENCH_CASES, checkBench, pct } from "@/lib/ai/bench";
 import type { ParseContext, ParsedItem } from "@/lib/ai/schema";
@@ -15,12 +14,7 @@ describe("Server-Timing", () => {
         { model: "gemini-3.1-flash-lite", ms: 900, ok: true, status: 200, hedge: true },
       ],
     });
-    const header = t.header();
-    expect(header).toMatch(/^auth;dur=\d+, rate;dur=12, ai_1;dur=1800;desc="gemini-3.1-flash-lite 429", ai_2;dur=900;desc="gemini-3.1-flash-lite ok hedge", total;dur=\d+$/);
-    const parsed = parseServerTiming(header);
-    expect(parsed.stages.rate).toBe(12);
-    expect(parsed.stages.ai_2).toBe(900);
-    expect(parsed.models).toEqual(["gemini-3.1-flash-lite 429", "gemini-3.1-flash-lite ok hedge"]);
+    expect(t.header()).toMatch(/^auth;dur=\d+, rate;dur=12, ai_1;dur=1800;desc="gemini-3.1-flash-lite 429", ai_2;dur=900;desc="gemini-3.1-flash-lite ok hedge", total;dur=\d+$/);
   });
 
   it("records the time even when the work fails, and ignores providers without attempts", async () => {
@@ -37,28 +31,14 @@ describe("Server-Timing", () => {
     expect(t.header()).toContain('desc="bad quote comma"');
   });
 
-  it("parses missing or malformed headers safely", () => {
-    expect(parseServerTiming(null)).toEqual({ stages: {}, models: [] });
-    expect(parseServerTiming("x;foo, ;dur=3")).toEqual({ stages: {}, models: [] });
-  });
 });
 
 describe("percentiles", () => {
   it("uses nearest rank", () => {
     const v = [5, 1, 9, 3, 7, 2, 8, 4, 10, 6];
-    expect(percentile(v, 50)).toBe(5);
-    expect(percentile(v, 90)).toBe(9);
-    expect(percentile([], 50)).toBe(0);
+    expect(pct(v, 50)).toBe(5);
     expect(pct(v, 90)).toBe(9);
     expect(pct([], 50)).toBeNull();
-  });
-
-  it("summarizes successful entries per kind, with the user's wait first", () => {
-    const e = (kind: PerfEntry["kind"], totalMs: number, ok = true): PerfEntry => ({ kind, at: 0, ok, totalMs, stages: { ai: totalMs - 100 } });
-    const s = summarize([e("text", 2000), e("text", 3000), e("text", 9000, false), e("voice", 4000)], "text");
-    expect(s.count).toBe(2);
-    expect(s.rows[0]).toEqual({ stage: "wait", p50: 2000, p90: 3000, n: 2 });
-    expect(s.rows[1]).toEqual({ stage: "ai", p50: 1900, p90: 2900, n: 2 });
   });
 });
 

@@ -14,7 +14,6 @@ import { LOCALE_COOKIE } from "@/i18n/config";
 import type { ThemePref } from "@/lib/theme";
 import { GoogleSection } from "./google-section";
 import { CategoryManager } from "./category-manager";
-import { SpeedSection } from "./speed-section";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -158,10 +157,6 @@ export function SettingsScreen() {
 
       <Section title={ts("categories")}>
         <CategoryManager />
-      </Section>
-
-      <Section title={ts("speed")}>
-        <SpeedSection />
       </Section>
 
       <Section title={ts("install")}>

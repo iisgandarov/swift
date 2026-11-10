@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Category, FocusSession, GoogleStatus, Item, Profile } from "@/lib/domain/types";
 import type { CategoryInput, FocusSessionInput, ItemInput, ItemPatch, ProfilePatch } from "@/lib/domain/schemas";
 import { api } from "./api";
-import { parseServerTiming, recordPerf } from "./perf";
 
 export interface Bootstrap {
   user: { email: string; name: string };
@@ -61,22 +60,10 @@ function removeCached(qc: ReturnType<typeof useQueryClient>, id: string) {
 export function useCreateItems() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (inputs: ItemInput[]) => {
-      const t0 = performance.now();
-      const stages: Record<string, number> = {};
-      const onResponse = (res: Response) => Object.assign(stages, parseServerTiming(res.headers.get("server-timing")).stages);
-      let ok = false;
-      try {
-        const items =
-          inputs.length === 1
-            ? [(await api<{ item: Item }>("/api/items", { method: "POST", json: inputs[0], onResponse })).item]
-            : (await api<{ items: Item[] }>("/api/items", { method: "POST", json: { items: inputs }, onResponse })).items;
-        ok = true;
-        return items;
-      } finally {
-        recordPerf({ kind: "save", at: Date.now(), ok, totalMs: Math.round(performance.now() - t0), stages, note: `${inputs.length}` });
-      }
-    },
+    mutationFn: async (inputs: ItemInput[]) =>
+      inputs.length === 1
+        ? [(await api<{ item: Item }>("/api/items", { method: "POST", json: inputs[0] })).item]
+        : (await api<{ items: Item[] }>("/api/items", { method: "POST", json: { items: inputs } })).items,
     onSuccess: (items) => {
       items.forEach((i) => upsertCached(qc, i));
       // Calendar sync runs on the server after the response: pick up its result shortly
