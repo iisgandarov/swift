@@ -18,8 +18,8 @@ export default function manifest(): MetadataRoute.Manifest {
     icons: [
       { src: "/icons/swift-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/swift-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/icons/swift-maskable-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
-      { src: "/icons/swift-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/icons/swift-maskable-v2-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+      { src: "/icons/swift-maskable-v2-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     shortcuts: [
       { name: "Text task", short_name: "Text", url: "/new/text", icons: [{ src: "/icons/swift-192.png", sizes: "192x192" }] },

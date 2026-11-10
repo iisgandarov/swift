@@ -3,7 +3,7 @@
  * - Build assets (/_next/static), icons, fonts: cache-first (they are content-hashed / immutable).
  * - API and auth requests are never cached here; data is persisted client-side (IndexedDB).
  */
-const VERSION = "swift-v2";
+const VERSION = "swift-v3"; // v3: new app icons (2026-11-10)
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const PRECACHE = ["/", "/calendar", "/focus", "/stats", "/settings", "/new", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon.svg"];
